@@ -24,11 +24,15 @@ const MAX_FAILED_ATTEMPTS = 5;
 const BASE_LOCK_MS = 15 * 60 * 1000;
 const DUMMY_HASH = "$2a$12$C6UmZ2gEzqUm2EgUe1Hq4eYpzS6N0E1bYJk4l3oWv1y8GZ9q2QovW";
 const isProd = process.env.NODE_ENV === "production";
+const cookieSameSite = process.env.COOKIE_SAME_SITE || (isProd ? "none" : "strict");
+const cookieSecure = process.env.COOKIE_SECURE
+    ? process.env.COOKIE_SECURE === "true"
+    : isProd || cookieSameSite === "none";
 
 const cookieBase = {
     httpOnly: true,
-    secure: isProd,
-    sameSite: "strict"
+    secure: cookieSecure,
+    sameSite: cookieSameSite
 };
 
 function logAudit({ adminId, emailAttempted, action, ip, userAgent, reason }) {

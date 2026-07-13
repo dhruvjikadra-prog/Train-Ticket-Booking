@@ -14,7 +14,10 @@ const app = express();
 
 connectDB();
 
-const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+const clientOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:3000")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
 
 app.set("trust proxy", 1);
 
@@ -29,7 +32,16 @@ app.use(
     })
 );
 
-app.use(cors({ origin: clientOrigin, credentials: true }));
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || clientOrigins.includes(origin.replace(/\/+$/, ""))) {
+            return callback(null, true);
+        }
+
+        return callback(null, false);
+    },
+    credentials: true
+}));
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
 app.use((req, res, next) => {

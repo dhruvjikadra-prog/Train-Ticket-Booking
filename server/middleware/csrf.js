@@ -2,14 +2,18 @@ const crypto = require("crypto");
 
 const CSRF_COOKIE = "ttb_csrf";
 const isProd = process.env.NODE_ENV === "production";
+const cookieSameSite = process.env.COOKIE_SAME_SITE || (isProd ? "none" : "strict");
+const cookieSecure = process.env.COOKIE_SECURE
+    ? process.env.COOKIE_SECURE === "true"
+    : isProd || cookieSameSite === "none";
 
 function issueCsrfToken(req, res) {
     const token = crypto.randomBytes(24).toString("hex");
 
     res.cookie(CSRF_COOKIE, token, {
         httpOnly: false,
-        secure: isProd,
-        sameSite: "strict",
+        secure: cookieSecure,
+        sameSite: cookieSameSite,
         path: "/",
         maxAge: 60 * 60 * 1000
     });

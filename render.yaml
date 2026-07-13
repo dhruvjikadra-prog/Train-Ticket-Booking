@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: train-ticket-booking-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: CAPTCHA_SECRET
+        generateValue: true
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
