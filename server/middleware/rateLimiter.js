@@ -68,6 +68,15 @@ const paymentLimiter = rateLimit({
     message: { message: "Too many payment attempts. Please try again later." }
 });
 
+const pnrStatusLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 30,
+    keyGenerator: (req) => ipKey(req),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many PNR status checks. Please try again later." }
+});
+
 module.exports = {
     loginLimiter,
     loginSlowDown,
@@ -75,5 +84,6 @@ module.exports = {
     globalLimiter,
     authenticatedLimiter,
     bookingWriteLimiter,
-    paymentLimiter
+    paymentLimiter,
+    pnrStatusLimiter
 };

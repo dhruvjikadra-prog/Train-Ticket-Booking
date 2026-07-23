@@ -25,12 +25,27 @@ const CLASS_NAMES = {
     "2S": "Second Sitting"
 };
 
+const CLASS_NAME_TO_CODE = Object.entries(CLASS_NAMES).reduce((result, [code, name]) => {
+    result[code.toUpperCase()] = code;
+    result[name.toUpperCase()] = code;
+    return result;
+}, {});
+
 function cleanString(value) {
     return String(value || "").trim();
 }
 
 function cleanStationCode(value) {
     return cleanString(value).toUpperCase();
+}
+
+function normalizeClassCode(value) {
+    const input = cleanString(value);
+
+    if (!input) return "";
+    if (["ALL", "ALL CLASS"].includes(input.toUpperCase())) return "All Class";
+
+    return CLASS_NAME_TO_CODE[input.toUpperCase()] || input.toUpperCase();
 }
 
 function toNumber(value) {
@@ -431,12 +446,30 @@ function getStationIndex(route, station) {
     );
 }
 
+function mapToPlainObject(value) {
+    if (value instanceof Map) {
+        return Object.fromEntries(value);
+    }
+
+    return value || {};
+}
+
+function getRouteForAvailability(train) {
+    if (Array.isArray(train?.route) && train.route.length >= 2) {
+        return train.route;
+    }
+
+    return [train?.source, train?.destination].filter(
+        (station) => station?.stationCode || station?.stationName
+    );
+}
+
 exports.searchTrains = async (req, res) => {
     try {
         const from = (req.query.from || "").trim();
         const to = (req.query.to || "").trim();
         const journeyDate = (req.query.date || "").trim();
-        let classCode = (req.query.class || "").trim();
+        let classCode = normalizeClassCode(req.query.class || "");
 
         const journeyDateFilter = journeyDate
             ? buildJourneyDateFilter(journeyDate)
@@ -448,17 +481,6 @@ exports.searchTrains = async (req, res) => {
                 message: "Journey date must be a valid YYYY-MM-DD date."
             });
         }
-
-        const classMap = {
-            "Sleeper": "SL",
-            "AC Chair Car": "CC",
-            "Executive Chair Car": "EC",
-            "AC 3 Tier": "3A",
-            "AC 2 Tier": "2A",
-            "First AC": "1A"
-        };
-
-        classCode = classMap[classCode] || classCode;
 
         /* ── Build MongoDB filters ────────────────────────────── */
         const filters = {};
@@ -784,6 +806,180 @@ exports.searchTrains = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+exports.refreshTrainClassAvailability = async (req, res) => {
+    try {
+        const trainId = cleanString(req.params.id);
+        const journeyDate = cleanString(req.query.date || req.query.journeyDate);
+        const from = cleanStationCode(req.query.from);
+        const to = cleanStationCode(req.query.to);
+        const classCode = normalizeClassCode(req.query.classCode || req.query.class);
+        const dateFilter = journeyDate ? buildJourneyDateFilter(journeyDate) : null;
+
+        if (!trainId) {
+            return res.status(400).json({
+                success: false,
+                message: "Train id is required."
+            });
+        }
+
+        if (!dateFilter) {
+            return res.status(400).json({
+                success: false,
+                message: "Journey date must be a valid YYYY-MM-DD date."
+            });
+        }
+
+        if (!from || !to || from === to) {
+            return res.status(400).json({
+                success: false,
+                message: "Valid boarding and dropping stations are required."
+            });
+        }
+
+        if (!classCode || classCode === "All Class") {
+            return res.status(400).json({
+                success: false,
+                message: "Please refresh a specific travel class."
+            });
+        }
+
+        const train = await Train.findById(trainId).lean();
+
+        if (!train) {
+            return res.status(404).json({
+                success: false,
+                message: "Train not found."
+            });
+        }
+
+        const trainClass = (train.classes || []).find(
+            (item) => item.code === classCode
+        );
+
+        if (!trainClass) {
+            return res.status(404).json({
+                success: false,
+                message: "This class is not available on the selected train."
+            });
+        }
+
+        const route = getRouteForAvailability(train);
+        const searchFromIndex = getStationIndex(route, from);
+        const searchToIndex = getStationIndex(route, to);
+
+        if (
+            searchFromIndex === -1 ||
+            searchToIndex === -1 ||
+            searchFromIndex >= searchToIndex
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Selected journey segment is invalid for this train."
+            });
+        }
+
+        const [coaches, inventory] = await Promise.all([
+            Coach.find({
+                trainId,
+                journeyDate: dateFilter,
+                classCode
+            }).lean(),
+            Seat.findOne({
+                trainId,
+                journeyDate: dateFilter
+            }).lean()
+        ]);
+
+        const activeReservations = coaches.length > 0
+            ? await SeatReservation.find({
+                trainId,
+                journeyDate: dateFilter,
+                classCode,
+                $or: [
+                    { status: "BOOKED" },
+                    { status: "HELD", holdExpiresAt: { $gt: new Date() } }
+                ]
+            }).lean()
+            : [];
+
+        const reservationsBySeat = new Map();
+
+        activeReservations.forEach((reservation) => {
+            if (!reservationsBySeat.has(reservation.seatCode)) {
+                reservationsBySeat.set(reservation.seatCode, []);
+            }
+
+            reservationsBySeat.get(reservation.seatCode).push(reservation);
+        });
+
+        const availableSeats = coaches.reduce((total, coach) => {
+            const freeSeats = (coach.seats || []).filter((seat) => {
+                const seatReservations = reservationsBySeat.get(seat.seatCode) || [];
+                const overlapping = seatReservations.some((reservation) => {
+                    const bookedFromIndex = getStationIndex(route, reservation.fromStation);
+                    const bookedToIndex = getStationIndex(route, reservation.toStation);
+
+                    if (bookedFromIndex === -1 || bookedToIndex === -1) {
+                        return false;
+                    }
+
+                    return isJourneyOverlap(
+                        searchFromIndex,
+                        searchToIndex,
+                        bookedFromIndex,
+                        bookedToIndex
+                    );
+                });
+
+                return !overlapping;
+            }).length;
+
+            return total + freeSeats;
+        }, 0);
+
+        const waitlist = mapToPlainObject(inventory?.waitlist);
+        const waitlistCount = Number(waitlist[classCode] || 0);
+        const classBookingOpen = coaches.length > 0;
+        const liveAvailableSeats = classBookingOpen ? availableSeats : 0;
+        const updatedAt = new Date().toISOString();
+
+        return res.status(200).json({
+            success: true,
+            trainId: train._id,
+            journeyDate,
+            classCode,
+            className: trainClass.name,
+            totalSeats: trainClass.totalSeats,
+            availableSeats: liveAvailableSeats,
+            waitlistCount,
+            classBookingOpen,
+            bookingStatus: classBookingOpen ? "OPEN" : "NOT_OPEN",
+            updatedAt,
+            seatInventory: {
+                journeyDate,
+                availability: {
+                    [classCode]: liveAvailableSeats
+                },
+                waitlist: {
+                    [classCode]: waitlistCount
+                }
+            }
+        });
+    } catch (error) {
+        if (error.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid train id."
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 

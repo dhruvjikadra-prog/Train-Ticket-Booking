@@ -1,5 +1,34 @@
 const mongoose = require('mongoose');
 
+const savedPassengerSchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+            maxlength: 60
+        },
+        age: {
+            type: Number,
+            required: true,
+            min: 1,
+            max: 120
+        },
+        gender: {
+            type: String,
+            required: true,
+            enum: ["Male", "Female", "Other"]
+        },
+        seniorCitizen: {
+            type: Boolean,
+            default: false
+        }
+    },
+    {
+        timestamps: true
+    }
+);
+
 const userSchema = new mongoose.Schema(
     {
         name: {
@@ -36,6 +65,17 @@ const userSchema = new mongoose.Schema(
         role: {
             type: String,
             default: "user"
+        },
+
+        savedPassengers: {
+            type: [savedPassengerSchema],
+            default: [],
+            validate: {
+                validator(passengers) {
+                    return passengers.length <= 12;
+                },
+                message: "You can save up to 12 passengers."
+            }
         }
     },
     {

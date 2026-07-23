@@ -65,6 +65,7 @@ const ticketRoutes = require("./routes/ticketRoutes");
 const mybookingRoutes = require("./routes/mybookingRoutes");
 const trainMapRoutes = require("./routes/trainMapRoutes");
 const adminBookingRoutes = require("./routes/adminBookingRoutes");
+const pnrStatusRoutes = require("./routes/pnrStatusRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin/auth", adminAuthRoutes);
@@ -78,6 +79,7 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/my-bookings", mybookingRoutes);
 app.use("/api/train-route-map", trainMapRoutes);
 app.use("/api/admin/bookings", adminBookingRoutes);
+app.use("/api/pnr-status", pnrStatusRoutes);
 app.use("/api/admin/payments", require("./routes/adminPaymentRoutes"));
 app.use("/api/admin/stations", require("./routes/adminStationRoutes"));
 app.use("/api/users", require("./routes/userProfileRoutes"));

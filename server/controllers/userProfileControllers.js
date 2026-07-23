@@ -10,6 +10,8 @@ const SALT_ROUNDS = 10;
 const NAME_PATTERN = /^[a-zA-Z][a-zA-Z\s.'-]*$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_PATTERN = /^[6-9]\d{9}$/;
+const PASSENGER_NAME_PATTERN = /^[\p{L}][\p{L}\s.'-]{1,59}$/u;
+const SAVED_PASSENGER_LIMIT = 12;
 
 // At least 8 chars, one uppercase, one lowercase, one digit, one symbol —
 // shown to the user as plain-language rules, not just enforced blindly.
@@ -27,9 +29,59 @@ const formatUser = (user) => ({
     email: user.email,
     mobile: user.mobile || null,
     role: user.role,
+    savedPassengers: (user.savedPassengers || []).map(formatSavedPassenger),
     memberSince: user.createdAt,
     updatedAt: user.updatedAt
 });
+
+function formatSavedPassenger(passenger) {
+    return {
+        id: passenger._id,
+        name: passenger.name,
+        age: passenger.age,
+        gender: passenger.gender,
+        seniorCitizen: Boolean(passenger.seniorCitizen)
+    };
+}
+
+const validateSavedPassengerPayload = (payload = {}) => {
+    const errors = {};
+
+    const name = String(payload.name || "").trim();
+    if (!name) {
+        errors.name = "Passenger name is required.";
+    } else if (!PASSENGER_NAME_PATTERN.test(name)) {
+        errors.name = "Use 2-60 letters; spaces, apostrophes, dots, and hyphens are allowed.";
+    }
+
+    const age = Number(payload.age);
+    if (!payload.age && payload.age !== 0) {
+        errors.age = "Passenger age is required.";
+    } else if (!Number.isInteger(age) || age < 1 || age > 120) {
+        errors.age = "Age must be a whole number between 1 and 120.";
+    }
+
+    const gender = String(payload.gender || "").trim();
+    if (!["Male", "Female", "Other"].includes(gender)) {
+        errors.gender = "Select a valid gender.";
+    }
+
+    const seniorCitizen = Boolean(payload.seniorCitizen);
+    if (seniorCitizen && age < 60) {
+        errors.age = "Senior Citizen can be selected only for age 60 or above.";
+    }
+
+    return {
+        valid: Object.keys(errors).length === 0,
+        errors,
+        value: {
+            name,
+            age,
+            gender,
+            seniorCitizen
+        }
+    };
+};
 
 /**
  * GET /api/users/me
@@ -234,9 +286,127 @@ const changeMyPassword = async (req, res) => {
     }
 };
 
+/**
+ * POST /api/users/me/passengers
+ * Adds a reusable passenger to the authenticated user's saved list.
+ */
+const addSavedPassenger = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        if ((user.savedPassengers || []).length >= SAVED_PASSENGER_LIMIT) {
+            return res.status(400).json({
+                message: `You can save up to ${SAVED_PASSENGER_LIMIT} passengers.`
+            });
+        }
+
+        const result = validateSavedPassengerPayload(req.body);
+
+        if (!result.valid) {
+            return res.status(400).json({
+                message: "Please fix the highlighted passenger fields.",
+                errors: result.errors
+            });
+        }
+
+        user.savedPassengers.push(result.value);
+        await user.save();
+
+        res.status(201).json({
+            message: "Passenger saved successfully.",
+            savedPassengers: user.savedPassengers.map(formatSavedPassenger)
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Unable to save passenger right now.",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * PUT /api/users/me/passengers/:passengerId
+ */
+const updateSavedPassenger = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        const passenger = user.savedPassengers.id(req.params.passengerId);
+
+        if (!passenger) {
+            return res.status(404).json({ message: "Saved passenger not found." });
+        }
+
+        const result = validateSavedPassengerPayload(req.body);
+
+        if (!result.valid) {
+            return res.status(400).json({
+                message: "Please fix the highlighted passenger fields.",
+                errors: result.errors
+            });
+        }
+
+        passenger.set(result.value);
+        await user.save();
+
+        res.json({
+            message: "Passenger updated successfully.",
+            savedPassengers: user.savedPassengers.map(formatSavedPassenger)
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Unable to update passenger right now.",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * DELETE /api/users/me/passengers/:passengerId
+ */
+const deleteSavedPassenger = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        const passenger = user.savedPassengers.id(req.params.passengerId);
+
+        if (!passenger) {
+            return res.status(404).json({ message: "Saved passenger not found." });
+        }
+
+        passenger.deleteOne();
+        await user.save();
+
+        res.json({
+            message: "Passenger removed successfully.",
+            savedPassengers: user.savedPassengers.map(formatSavedPassenger)
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Unable to remove passenger right now.",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getMyProfile,
     updateMyProfile,
     changeMyPassword,
+    addSavedPassenger,
+    updateSavedPassenger,
+    deleteSavedPassenger,
     PASSWORD_RULES
 };

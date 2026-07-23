@@ -9,7 +9,10 @@ const router = express.Router();
 const {
     getMyProfile,
     updateMyProfile,
-    changeMyPassword
+    changeMyPassword,
+    addSavedPassenger,
+    updateSavedPassenger,
+    deleteSavedPassenger
 } = require("../controllers/userProfileControllers");
 
 const { verifyToken } = require("../middleware/authMiddleware");
@@ -19,5 +22,8 @@ router.use(verifyToken);
 router.get("/me", getMyProfile);
 router.put("/me", updateMyProfile);
 router.put("/me/password", changeMyPassword);
+router.post("/me/passengers", addSavedPassenger);
+router.put("/me/passengers/:passengerId", updateSavedPassenger);
+router.delete("/me/passengers/:passengerId", deleteSavedPassenger);
 
 module.exports = router;

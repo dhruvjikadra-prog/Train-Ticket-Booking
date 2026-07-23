@@ -5,6 +5,7 @@ const router = express.Router();
 const {
     createTrain,
     searchTrains,
+    refreshTrainClassAvailability,
     getTrainById,
     getTrainSuggestions,
     getTrainSchedule,
@@ -26,6 +27,7 @@ router.get("/schedule", getTrainSchedule);
 
 router.get("/", requireAdminAuth, getAllTrains);
 
+router.get("/:id/availability", refreshTrainClassAvailability);
 router.get("/:id", getTrainById);
 router.put("/:id", requireAdminAuth, verifyCsrf, updateTrain);
 router.delete("/:id", requireAdminAuth, verifyCsrf, deleteTrain);
