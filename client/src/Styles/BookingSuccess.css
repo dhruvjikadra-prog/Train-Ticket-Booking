@@ -1,0 +1,618 @@
+/* Loaded once for this page family: a condensed signage face for headlines/
+   station names, and a mono face for ticket data (PNR, seat, barcode) —
+   deliberately not the same pairing used on the rest of the site, so the
+   e-ticket reads as its own printed artifact rather than another app screen. */
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
+
+:root {
+    --tk-navy: #0d2b4e;
+    --tk-navy-deep: #081c34;
+    --tk-rust: #bf5b32;
+    --tk-cream: #f8f3e8;
+    --tk-page-bg: #eef1f7;
+    --tk-line: #e3d8bf;
+    --tk-ink: #1e2733;
+    --tk-muted: #6b6457;
+    --tk-green: #1f7a4d;
+    --tk-amber: #b9790a;
+    --tk-red: #b3413a;
+}
+
+.ticket-page {
+    min-height: 80vh;
+    padding: 40px 20px 90px;
+    font-family: "Inter", "Segoe UI", sans-serif;
+    color: var(--tk-ink);
+    background:
+        radial-gradient(circle at 8% 0%, rgba(13, 43, 78, .08), transparent 26rem),
+        var(--tk-page-bg);
+}
+
+/* ---------- Loading / error states ---------- */
+
+.ticket-state {
+    max-width: 440px;
+    margin: 60px auto;
+    padding: 56px 28px;
+    text-align: center;
+    border: 1px solid #e1e7f0;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, .08);
+}
+
+.ticket-state i {
+    margin-bottom: 14px;
+    color: var(--tk-navy);
+    font-size: 32px;
+}
+
+.ticket-state h2 {
+    margin: 0 0 6px;
+    font-size: 19px;
+}
+
+.ticket-state p {
+    margin: 0;
+    color: var(--tk-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ticket-state--error i {
+    color: var(--tk-red);
+}
+
+.ticket-state button {
+    margin-top: 18px;
+    padding: 11px 22px;
+    border: 0;
+    border-radius: 10px;
+    color: #fff;
+    background: var(--tk-navy);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ---------- Toolbar (kept outside the printable card) ---------- */
+
+.e-ticket-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 880px;
+    margin: 0 auto 18px;
+}
+
+.e-ticket-toolbar__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--tk-navy);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.e-ticket-toolbar__back:hover {
+    text-decoration: underline;
+}
+
+.e-ticket-toolbar__actions {
+    display: flex;
+    gap: 10px;
+}
+
+.e-ticket-toolbar__actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border: 1.5px solid #cdd6e3;
+    border-radius: 10px;
+    color: var(--tk-navy);
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.e-ticket-toolbar__actions button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(13, 43, 78, .14);
+}
+
+.e-ticket-toolbar__actions button.primary {
+    border-color: var(--tk-navy);
+    color: #fff;
+    background: var(--tk-navy);
+}
+
+.e-ticket-toolbar__actions button:disabled {
+    opacity: .7;
+    cursor: progress;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ---------- The ticket ---------- */
+
+.e-ticket {
+    max-width: 880px;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid var(--tk-line);
+    border-radius: 20px;
+    background: var(--tk-cream);
+    box-shadow: 0 26px 60px rgba(13, 30, 53, .16);
+}
+
+.e-ticket__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px 36px 24px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--tk-navy-deep), var(--tk-navy));
+}
+
+.e-ticket__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .14);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.e-ticket__status i {
+    font-size: 9px;
+}
+
+.e-ticket__status--ok {
+    color: #b9f3d2;
+}
+
+.e-ticket__status--low {
+    color: #ffe1a6;
+}
+
+.e-ticket__status--none {
+    color: #ffc4c0;
+}
+
+.e-ticket__eyebrow {
+    display: block;
+    margin-bottom: 4px;
+    color: #9fb6d6;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.e-ticket__header h1 {
+    margin: 0;
+    font-family: "Big Shoulders Display", "Inter", sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+}
+
+.e-ticket__pnr {
+    flex: 0 0 auto;
+    text-align: right;
+}
+
+.e-ticket__pnr small {
+    display: block;
+    margin-bottom: 4px;
+    color: #9fb6d6;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .14em;
+}
+
+.e-ticket__pnr strong {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 23px;
+    letter-spacing: .1em;
+}
+
+.e-ticket__route {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 28px 36px;
+}
+
+.e-ticket__station {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.e-ticket__station small {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--tk-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+}
+
+.e-ticket__station strong {
+    display: block;
+    font-family: "Big Shoulders Display", "Inter", sans-serif;
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -.01em;
+}
+
+.e-ticket__station span {
+    display: block;
+    margin-top: 5px;
+    color: var(--tk-muted);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+}
+
+.e-ticket__station--end {
+    text-align: right;
+}
+
+.e-ticket__track {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+}
+
+.e-ticket__track::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: 2px dashed var(--tk-rust);
+}
+
+.e-ticket__track i {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--tk-rust);
+    box-shadow: 0 0 0 6px var(--tk-cream);
+    font-size: 13px;
+}
+
+/* Perforated tear line — the page's signature device, reused at every
+   section break so the card reads as one continuous strip of ticket stock. */
+.e-ticket__perforation {
+    position: relative;
+    height: 20px;
+    background-image: radial-gradient(circle 7px, var(--tk-page-bg) 7px, transparent 7.3px);
+    background-position: left center;
+    background-repeat: repeat-x;
+    background-size: 24px 100%;
+}
+
+.e-ticket__perforation::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 50%;
+    border-top: 1.5px dashed var(--tk-line);
+}
+
+.e-ticket__meta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    padding: 20px 36px;
+}
+
+.e-ticket__meta small {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--tk-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.e-ticket__meta strong {
+    font-size: 14px;
+}
+
+.e-ticket__passengers {
+    padding: 4px 36px 22px;
+}
+
+.e-ticket__passengers-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.e-ticket__passengers-head h2 {
+    margin: 0;
+    font-size: 14px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.e-ticket__passengers-head span {
+    color: var(--tk-muted);
+    font-size: 12px;
+}
+
+.e-ticket__table {
+    border: 1px solid var(--tk-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.e-ticket__row {
+    display: grid;
+    grid-template-columns: 34px 1.6fr 1.2fr 110px;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    border-bottom: 1px dashed var(--tk-line);
+    background: rgba(255, 255, 255, .5);
+}
+
+.e-ticket__row:last-child {
+    border-bottom: 0;
+}
+
+.e-ticket__row--head {
+    background: rgba(13, 43, 78, .06);
+    color: var(--tk-muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.e-ticket__index {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--tk-navy);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.e-ticket__name {
+    font-weight: 700;
+}
+
+.e-ticket__age {
+    color: var(--tk-muted);
+    font-size: 12.5px;
+}
+
+.e-ticket__seat {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 700;
+    color: var(--tk-rust);
+}
+
+.e-ticket__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 36px;
+}
+
+.e-ticket__footer-info {
+    display: flex;
+    gap: 30px;
+}
+
+.e-ticket__footer-info small {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--tk-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.e-ticket__footer-info strong {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 14px;
+}
+
+.e-ticket__barcode {
+    text-align: right;
+}
+
+.e-ticket__barcode-bars {
+    width: 140px;
+    height: 38px;
+    margin-bottom: 6px;
+    background-image: repeating-linear-gradient(90deg,
+            var(--tk-ink) 0 2px,
+            transparent 2px 4px,
+            var(--tk-ink) 4px 7px,
+            transparent 7px 9px,
+            var(--tk-ink) 9px 11px,
+            transparent 11px 16px);
+}
+
+.e-ticket__barcode small {
+    display: block;
+    color: var(--tk-muted);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+}
+
+.e-ticket__disclaimer {
+    margin: 0;
+    padding: 14px 36px 26px;
+    color: var(--tk-muted);
+    font-size: 11.5px;
+    line-height: 1.6;
+    border-top: 1px solid var(--tk-line);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 760px) {
+    .e-ticket-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .e-ticket-toolbar__actions button {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .e-ticket__header,
+    .e-ticket__route,
+    .e-ticket__meta,
+    .e-ticket__passengers,
+    .e-ticket__footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .e-ticket__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .e-ticket__pnr {
+        text-align: left;
+    }
+
+    .e-ticket__route {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .e-ticket__track {
+        height: 34px;
+    }
+
+    .e-ticket__track::before {
+        left: 50%;
+        right: auto;
+        top: 0;
+        bottom: 0;
+        border-top: 0;
+        border-left: 2px dashed var(--tk-rust);
+    }
+
+    .e-ticket__station--end {
+        text-align: left;
+    }
+
+    .e-ticket__meta {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .e-ticket__row {
+        grid-template-columns: 26px 1fr;
+        grid-template-areas:
+            "index name"
+            "index age"
+            "index seat";
+        row-gap: 3px;
+    }
+
+    .e-ticket__row--head {
+        display: none;
+    }
+
+    .e-ticket__index {
+        grid-area: index;
+    }
+
+    .e-ticket__name {
+        grid-area: name;
+    }
+
+    .e-ticket__age {
+        grid-area: age;
+    }
+
+    .e-ticket__seat {
+        grid-area: seat;
+    }
+
+    .e-ticket__footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .e-ticket__barcode {
+        text-align: left;
+    }
+}
+
+/* ---------- Print ---------- */
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .e-ticket,
+    .e-ticket * {
+        visibility: visible;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .e-ticket {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        max-width: none;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .e-ticket-toolbar {
+        display: none;
+    }
+}

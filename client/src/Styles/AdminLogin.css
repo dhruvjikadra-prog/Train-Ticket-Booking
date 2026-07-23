@@ -1,0 +1,379 @@
+/* ===========================================================================
+   AdminLogin
+   ---------------------------------------------------------------------------
+   Scoped under .al-page / .al-card so nothing here can bleed into other
+   pages, and every animation is namespaced "al*" to avoid colliding with
+   keyframes of the same generic name defined elsewhere in the app.
+=========================================================================== */
+
+.al-page {
+    --al-blue-300: #4da8ff;
+    --al-blue-500: #0d6efd;
+    --al-blue-600: #0d5dfd;
+    --al-navy-900: #0f2748;
+    --al-slate-600: #33516f;
+    --al-slate-500: #45607f;
+    --al-slate-400: #607d99;
+    --al-danger: #dc3545;
+    --al-success: #16a34a;
+    --al-glass: rgba(255, 255, 255, .94);
+
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .86) 0%, rgba(222, 242, 255, .72) 30%, rgba(255, 255, 255, .94) 100%),
+        linear-gradient(120deg, rgba(90, 178, 255, .35), rgba(255, 255, 255, .78) 48%, rgba(135, 206, 250, .28));
+    background-attachment: fixed;
+}
+
+.al-backdrop-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(13, 110, 253, .06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(13, 110, 253, .06) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(circle at 50% 35%, rgba(0, 0, 0, .8), transparent 70%);
+    pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Card
+--------------------------------------------------------------------------- */
+
+.al-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    background: var(--al-glass);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, .82);
+    border-radius: 22px;
+    padding: 40px 34px 30px;
+    box-shadow: 0 30px 80px rgba(15, 42, 90, .22);
+    animation: alCardIn .4s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+@keyframes alCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.al-shield {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--al-blue-300), var(--al-blue-600));
+    box-shadow: 0 14px 30px rgba(13, 93, 253, .35);
+}
+
+.al-title {
+    margin: 0 0 4px;
+    text-align: center;
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: var(--al-navy-900);
+}
+
+.al-subtitle {
+    margin: 0 0 22px;
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--al-slate-500);
+}
+
+/* ---------------------------------------------------------------------------
+   Alerts / lockout
+--------------------------------------------------------------------------- */
+
+.al-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: rgba(220, 53, 69, .1);
+    color: var(--al-danger);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    animation: alShake .35s ease;
+}
+
+.al-alert i {
+    margin-top: 1px;
+}
+
+@keyframes alShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-4px);
+    }
+
+    75% {
+        transform: translateX(4px);
+    }
+}
+
+.al-lockout {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(217, 119, 6, .1);
+    color: #92400e;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+}
+
+.al-lockout i {
+    font-size: 18px;
+}
+
+.al-lockout div {
+    display: flex;
+    flex-direction: column;
+    font-size: 12.5px;
+}
+
+.al-lockout strong {
+    font-size: 13.5px;
+}
+
+/* ---------------------------------------------------------------------------
+   Form fields
+--------------------------------------------------------------------------- */
+
+.al-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.al-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.al-field label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--al-slate-600);
+}
+
+.al-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1.5px solid rgba(15, 23, 42, .1);
+    border-radius: 12px;
+    padding: 0 14px;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.al-input-wrap:focus-within {
+    border-color: var(--al-blue-500);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, .12);
+}
+
+.al-input-wrap.has-error {
+    border-color: var(--al-danger);
+}
+
+.al-input-wrap i:first-child {
+    color: var(--al-slate-400);
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.al-input-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 13px 0;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    background: transparent;
+    color: var(--al-navy-900);
+}
+
+.al-input-wrap input:disabled {
+    color: var(--al-slate-400);
+}
+
+.al-toggle-visibility {
+    border: none;
+    background: transparent;
+    color: var(--al-slate-400);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 6px;
+}
+
+.al-toggle-visibility:hover {
+    color: var(--al-blue-500);
+}
+
+.al-otp-wrap input {
+    letter-spacing: 6px;
+    font-weight: 700;
+    font-size: 18px;
+    text-align: center;
+}
+
+.al-field-error {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--al-danger);
+}
+
+/* Honeypot — visually off-screen, never display:none/visibility:hidden,
+   so it still reads as a normal fillable field to non-JS-aware bots while
+   being unreachable/invisible to real visitors. */
+.al-honeypot {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Submit / links
+--------------------------------------------------------------------------- */
+
+.al-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 4px;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--al-blue-300), var(--al-blue-600));
+    box-shadow: 0 14px 30px rgba(13, 110, 253, .3);
+    transition: transform .2s, box-shadow .2s, opacity .2s;
+}
+
+.al-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px rgba(13, 110, 253, .38);
+}
+
+.al-submit:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.al-spin {
+    animation: alSpin .8s linear infinite;
+}
+
+@keyframes alSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.al-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    color: var(--al-slate-500);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px;
+}
+
+.al-link-btn:hover:not(:disabled) {
+    color: var(--al-blue-500);
+}
+
+/* ---------------------------------------------------------------------------
+   Footer
+--------------------------------------------------------------------------- */
+
+.al-footer-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px dashed rgba(15, 23, 42, .1);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--al-slate-400);
+    text-align: center;
+}
+
+.al-help-note {
+    margin: 10px 0 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--al-slate-400);
+    line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive / reduced motion
+--------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+    .al-card {
+        padding: 32px 22px 24px;
+        border-radius: 18px;
+    }
+
+    .al-title {
+        font-size: 1.4rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .al-card,
+    .al-alert,
+    .al-spin {
+        animation: none !important;
+    }
+}

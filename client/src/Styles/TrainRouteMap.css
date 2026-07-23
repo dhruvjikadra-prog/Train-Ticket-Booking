@@ -1,0 +1,484 @@
+/* ===========================================================================
+   TrainRouteMap
+   ---------------------------------------------------------------------------
+   Everything in this file is scoped under .trm-shell. Leaflet writes a few
+   of its own classes straight onto the page (.leaflet-container,
+   .leaflet-popup, .leaflet-popup-content-wrapper, ...) and those names are
+   shared by *every* map Leaflet ever renders anywhere in the app. Styling
+   them bare (as the old file did with a top-level ".leaflet-container { }")
+   leaks those rules onto any other Leaflet map on the site. Every such rule
+   below is nested under .trm-shell / .trm-popup so it can never bleed out,
+   and every animation is namespaced "trm*" so it can't collide with
+   keyframes of the same generic name defined elsewhere in the app.
+=========================================================================== */
+
+.trm-shell {
+    /* Local theme tokens — mirrors the rail-* palette used on the schedule
+       page, but kept self-contained so this component still looks right if
+       it's ever dropped somewhere that doesn't define --rail-* vars. */
+    --trm-blue-300: #4da8ff;
+    --trm-blue-500: #0d6efd;
+    --trm-blue-600: #0d5dfd;
+    --trm-navy-900: #0f2748;
+    --trm-slate-600: #33516f;
+    --trm-slate-500: #45607f;
+    --trm-slate-400: #607d99;
+    --trm-success: #16a34a;
+    --trm-glass: rgba(255, 255, 255, .94);
+
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+    border-radius: 20px;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+    isolation: isolate;
+}
+
+.trm-shell .trm-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Leaflet container — scoped, this is the bleeding fix
+--------------------------------------------------------------------------- */
+
+.trm-shell .leaflet-container {
+    width: 100%;
+    height: 100%;
+    background: #eef4fb;
+    font-family: 'Poppins', sans-serif;
+}
+
+.trm-shell .leaflet-control-zoom {
+    border: none !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .14) !important;
+    margin: 14px !important;
+}
+
+.trm-shell .leaflet-control-zoom a {
+    width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+    color: var(--trm-blue-600) !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+}
+
+.trm-shell .leaflet-control-attribution {
+    background: rgba(255, 255, 255, .75) !important;
+    backdrop-filter: blur(4px);
+    border-radius: 8px 0 0 0;
+    font-size: 10px !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Empty state
+--------------------------------------------------------------------------- */
+
+.trm-empty {
+    height: 100%;
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    padding: 30px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(238, 248, 255, .85));
+    color: var(--trm-slate-500);
+}
+
+.trm-empty-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+    font-size: 22px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--trm-blue-300), var(--trm-blue-500));
+    animation: trmFloat 2.6s ease-in-out infinite;
+}
+
+.trm-empty h4 {
+    font-family: 'Comfortaa', sans-serif;
+    color: var(--trm-navy-900);
+    font-weight: 700;
+    margin: 0;
+}
+
+.trm-empty p {
+    font-size: 13px;
+    margin: 0;
+    max-width: 280px;
+}
+
+@keyframes trmFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Route line
+--------------------------------------------------------------------------- */
+
+.trm-shell .trm-route-glow {
+    stroke: var(--trm-blue-300);
+    stroke-opacity: .35;
+    stroke-width: 11px;
+    stroke-linecap: round;
+}
+
+.trm-shell .trm-route-line {
+    stroke: var(--trm-blue-600);
+    stroke-width: 4px;
+    stroke-linecap: round;
+    stroke-dasharray: 1px 10px;
+    animation: trmFlow 18s linear infinite;
+}
+
+@keyframes trmFlow {
+    to {
+        stroke-dashoffset: -500px;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Station pins
+--------------------------------------------------------------------------- */
+
+.trm-shell .trm-pin-wrap {
+    background: transparent;
+    border: none;
+}
+
+.trm-pin {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, .3);
+    transition: transform .2s ease;
+}
+
+.trm-shell .leaflet-marker-icon:hover .trm-pin {
+    transform: scale(1.25);
+}
+
+.trm-pin-origin {
+    background: var(--trm-success);
+}
+
+.trm-pin-dest {
+    background: #e1294b;
+}
+
+.trm-pin-stop {
+    width: 10px;
+    height: 10px;
+    background: var(--trm-blue-500);
+    border-width: 2px;
+}
+
+/* Live train marker */
+
+.trm-live-marker {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.trm-live-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(13, 110, 253, .35);
+    animation: trmPing 1.6s cubic-bezier(.4, 0, .6, 1) infinite;
+}
+
+.trm-live-core {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    background: linear-gradient(135deg, var(--trm-blue-300), var(--trm-blue-600));
+    border: 2px solid #fff;
+    box-shadow: 0 4px 12px rgba(13, 93, 253, .45);
+}
+
+@keyframes trmPing {
+    0% {
+        transform: scale(.7);
+        opacity: .9;
+    }
+
+    100% {
+        transform: scale(1.9);
+        opacity: 0;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Popups
+--------------------------------------------------------------------------- */
+
+.trm-shell .leaflet-popup-content-wrapper {
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, .22);
+    padding: 0;
+    overflow: hidden;
+}
+
+.trm-shell .leaflet-popup-content {
+    margin: 0;
+    width: 220px !important;
+}
+
+.trm-shell .leaflet-popup-tip-container {
+    width: 22px;
+    height: 11px;
+}
+
+.trm-popup-inner {
+    padding: 14px 16px 12px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.trm-popup-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    padding: 3px 9px;
+    border-radius: 50px;
+    margin-bottom: 8px;
+}
+
+.trm-popup-tag-origin {
+    background: rgba(22, 163, 74, .12);
+    color: var(--trm-success);
+}
+
+.trm-popup-tag-destination {
+    background: rgba(225, 41, 75, .12);
+    color: #e1294b;
+}
+
+.trm-popup-tag-stop {
+    background: rgba(13, 110, 253, .1);
+    color: var(--trm-blue-600);
+}
+
+.trm-popup-tag-live {
+    background: rgba(13, 110, 253, .1);
+    color: var(--trm-blue-600);
+}
+
+.trm-live-dot {
+    font-size: 6px;
+    animation: trmBlink 1.2s ease-in-out infinite;
+}
+
+@keyframes trmBlink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .25;
+    }
+}
+
+.trm-popup-title {
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--trm-navy-900);
+    margin-bottom: 10px;
+}
+
+.trm-popup-code {
+    display: inline-block;
+    margin-left: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--trm-blue-600);
+    background: rgba(13, 110, 253, .08);
+    padding: 1px 7px;
+    border-radius: 50px;
+}
+
+.trm-popup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px 0;
+    border-top: 1px dashed rgba(15, 23, 42, .1);
+    border-bottom: 1px dashed rgba(15, 23, 42, .1);
+}
+
+.trm-popup-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.trm-popup-label {
+    font-size: 10px;
+    color: var(--trm-slate-400);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.trm-popup-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--trm-navy-900);
+}
+
+.trm-popup-distance {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--trm-slate-500);
+}
+
+.trm-popup-live p {
+    font-size: 12.5px;
+    color: var(--trm-slate-600);
+    margin: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Legend
+--------------------------------------------------------------------------- */
+
+.trm-legend {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    z-index: 650;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--trm-glass);
+    backdrop-filter: blur(10px);
+    padding: 8px 14px;
+    border-radius: 50px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .14);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--trm-slate-600);
+}
+
+.trm-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.trm-legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.trm-legend-origin {
+    background: var(--trm-success);
+}
+
+.trm-legend-stop {
+    background: var(--trm-blue-500);
+}
+
+.trm-legend-dest {
+    background: #e1294b;
+}
+
+.trm-legend-live {
+    background: var(--trm-blue-600);
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, .6);
+    animation: trmDotPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes trmDotPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, .5);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(13, 110, 253, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive
+--------------------------------------------------------------------------- */
+
+@media (max-width: 576px) {
+    .trm-legend {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        justify-content: center;
+        gap: 8px;
+        padding: 7px 10px;
+    }
+
+    .trm-shell .leaflet-popup-content {
+        width: 190px !important;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion
+--------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .trm-shell .trm-route-line,
+    .trm-empty-icon,
+    .trm-live-ring,
+    .trm-live-dot,
+    .trm-legend-live {
+        animation: none !important;
+    }
+}

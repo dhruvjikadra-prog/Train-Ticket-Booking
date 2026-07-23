@@ -1,0 +1,297 @@
+.journey-loader {
+    --loader-blue: #1769e0;
+    --loader-dark: #0c2850;
+    --loader-sky: #dff3ff;
+    display: grid;
+    place-items: center;
+    padding: 32px 20px;
+    color: var(--loader-dark);
+}
+
+.journey-loader--page {
+    min-height: 70vh;
+    background:
+        radial-gradient(circle at 15% 18%, rgba(72, 170, 255, .16), transparent 22rem),
+        linear-gradient(180deg, #f8fcff, #eef6ff);
+}
+
+.journey-loader--inline {
+    min-height: 360px;
+    padding: 24px;
+}
+
+.journey-loader--overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    min-height: 100vh;
+    background: rgba(7, 25, 52, .72);
+    backdrop-filter: blur(9px);
+    animation: journeyOverlayIn .2s ease both;
+}
+
+.journey-loader__card {
+    width: min(540px, 100%);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .85);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 28px 80px rgba(7, 31, 69, .2);
+}
+
+.journey-loader__scene {
+    position: relative;
+    height: 190px;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, #cceeff 0 68%, #b9db9b 68% 82%, #8091a3 82%);
+}
+
+.journey-loader__scene::before {
+    content: "";
+    position: absolute;
+    right: -45px;
+    bottom: 34px;
+    width: 280px;
+    height: 105px;
+    border-radius: 70% 0 0;
+    background: #8fc274;
+}
+
+.journey-loader__sun {
+    position: absolute;
+    top: 24px;
+    right: 46px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #ffd96a;
+    box-shadow: 0 0 0 12px rgba(255, 217, 106, .18);
+}
+
+.journey-loader__cloud {
+    position: absolute;
+    width: 74px;
+    height: 20px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, .86);
+    animation: loaderCloud 5s linear infinite;
+}
+
+.journey-loader__cloud::before,
+.journey-loader__cloud::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    border-radius: 50%;
+    background: inherit;
+}
+
+.journey-loader__cloud::before {
+    left: 13px;
+    width: 30px;
+    height: 30px;
+}
+
+.journey-loader__cloud::after {
+    right: 12px;
+    width: 24px;
+    height: 24px;
+}
+
+.cloud-one {
+    top: 44px;
+    left: -90px;
+}
+
+.cloud-two {
+    top: 84px;
+    left: -160px;
+    opacity: .72;
+    animation-delay: -2.4s;
+}
+
+.journey-loader__train {
+    position: absolute;
+    left: 50%;
+    bottom: 35px;
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    transform: translateX(-50%);
+    animation: loaderTrain 1.05s ease-in-out infinite alternate;
+}
+
+.journey-loader__engine,
+.journey-loader__coach {
+    position: relative;
+    height: 58px;
+    border: 3px solid #0e3e78;
+    background: linear-gradient(145deg, #2682ef, #1559bd);
+    box-shadow: inset 0 -9px rgba(4, 29, 67, .2);
+}
+
+.journey-loader__engine {
+    display: grid;
+    width: 88px;
+    border-radius: 34px 9px 7px 7px;
+    color: #fff;
+    font-size: 24px;
+    place-items: center;
+}
+
+.journey-loader__coach {
+    display: flex;
+    width: 105px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 8px 8px 6px 6px;
+}
+
+.journey-loader__coach i {
+    width: 23px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, .5);
+    border-radius: 4px;
+    background: #a8dcff;
+}
+
+.journey-loader__engine::after,
+.journey-loader__coach::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -10px;
+    height: 14px;
+    background:
+        radial-gradient(circle at 9px 5px, #172b40 0 7px, transparent 7.5px),
+        radial-gradient(circle at calc(100% - 9px) 5px, #172b40 0 7px, transparent 7.5px);
+}
+
+.journey-loader__track {
+    position: absolute;
+    right: -10%;
+    bottom: 22px;
+    width: 120%;
+    height: 7px;
+    border-top: 3px solid #34475a;
+    border-bottom: 3px solid #34475a;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0 18px,
+        #293b4e 18px 24px
+    );
+    animation: loaderTrack .45s linear infinite;
+}
+
+.journey-loader__signal {
+    position: absolute;
+    left: 30px;
+    bottom: 31px;
+    width: 7px;
+    height: 70px;
+    border-radius: 6px;
+    background: #35495d;
+}
+
+.journey-loader__signal i {
+    position: absolute;
+    top: -3px;
+    left: -8px;
+    width: 23px;
+    height: 31px;
+    border: 5px solid #35495d;
+    border-radius: 8px;
+    background: #31c76a;
+    box-shadow: inset 0 0 0 4px #c8f8d8, 0 0 18px rgba(49, 199, 106, .5);
+}
+
+.journey-loader__copy {
+    padding: 26px 32px 30px;
+    text-align: center;
+}
+
+.journey-loader__eyebrow {
+    color: var(--loader-blue);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+.journey-loader__copy h2 {
+    margin: 7px 0;
+    color: var(--loader-dark);
+    font-size: clamp(22px, 4vw, 30px);
+    font-weight: 850;
+}
+
+.journey-loader__copy p {
+    margin: 0;
+    color: #647b92;
+    line-height: 1.55;
+}
+
+.journey-loader__progress {
+    height: 6px;
+    margin-top: 22px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e5eef8;
+}
+
+.journey-loader__progress span {
+    display: block;
+    width: 42%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #2ea6ff, #155eef, #6f62ff);
+    animation: loaderProgress 1.25s ease-in-out infinite;
+}
+
+@keyframes loaderTrain {
+    to { transform: translateX(-50%) translateY(-3px); }
+}
+
+@keyframes loaderTrack {
+    to { transform: translateX(-24px); }
+}
+
+@keyframes loaderCloud {
+    to { transform: translateX(700px); }
+}
+
+@keyframes loaderProgress {
+    0% { transform: translateX(-110%); }
+    100% { transform: translateX(340%); }
+}
+
+@keyframes journeyOverlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 560px) {
+    .journey-loader__scene {
+        height: 165px;
+    }
+
+    .journey-loader__coach.coach-two {
+        display: none;
+    }
+
+    .journey-loader__copy {
+        padding: 22px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .journey-loader *,
+    .journey-loader *::before,
+    .journey-loader *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

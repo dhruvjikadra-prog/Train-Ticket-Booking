@@ -1,0 +1,89 @@
+.sfp-wrapper {
+    display: contents;
+}
+
+.sfp-name-field {
+    position: relative;
+}
+
+.sfp-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 40;
+    background: var(--ad-card-bg, #ffffff);
+    border: 1px solid var(--ad-border, #e2e5eb);
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 6px;
+}
+
+.sfp-status {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--ad-muted, #6b7280);
+}
+
+.sfp-option {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 52px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: var(--ad-text, #1f2430);
+}
+
+.sfp-option:hover,
+.sfp-option.is-highlighted {
+    background: var(--ad-hover, #eef2ff);
+}
+
+.sfp-option-code {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    color: var(--ad-primary, #4a5aec);
+    background: var(--ad-primary-tint, rgba(74, 90, 236, 0.12));
+    padding: 3px 6px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.sfp-option-name {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sfp-option-city {
+    font-size: 12px;
+    color: var(--ad-muted, #6b7280);
+    white-space: nowrap;
+}
+
+.ad-dark .sfp-dropdown {
+    background: var(--ad-dark-card, #1b2030);
+    border-color: var(--ad-dark-border, #2b3247);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.ad-dark .sfp-option {
+    color: var(--ad-dark-text, #e7e9f2);
+}
+
+.ad-dark .sfp-option:hover,
+.ad-dark .sfp-option.is-highlighted {
+    background: rgba(255, 255, 255, 0.06);
+}

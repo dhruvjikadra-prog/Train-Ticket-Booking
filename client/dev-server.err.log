@@ -1,0 +1,16 @@
+=none : The term '=none' is not recognized as the name of a cmdlet, function, script file, or operable program. Check 
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ ='none'; ='3000'; npm start
++ ~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (=none:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+=3000 : The term '=3000' is not recognized as the name of a cmdlet, function, script file, or operable program. Check 
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:10
++ ='none'; ='3000'; npm start
++          ~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (=3000:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 

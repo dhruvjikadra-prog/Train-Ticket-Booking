@@ -1,0 +1,613 @@
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+.hero-section {
+    min-height: 100vh;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, .86) 0%,
+            rgba(222, 242, 255, .72) 36%,
+            rgba(255, 255, 255, .9) 100%),
+        linear-gradient(120deg,
+            rgba(90, 178, 255, .42),
+            rgba(255, 255, 255, .78) 48%,
+            rgba(135, 206, 250, .34)),
+        url("../Assets/BG.png") center center/cover no-repeat;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+}
+
+.overlay {
+    width: 100%;
+    background:
+        radial-gradient(circle at 50% 54%,
+            rgba(255, 255, 255, .72) 0%,
+            rgba(255, 255, 255, .38) 34%,
+            rgba(255, 255, 255, 0) 68%);
+}
+
+.hero-content {
+    text-align: center;
+    color: #0f2748;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    text-shadow: 0 2px 14px rgba(255, 255, 255, .78);
+}
+
+.cutting {
+    color: #0abdef;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    margin-bottom: 35px;
+    color: #33516f;
+}
+
+/* Search mode tabs (Station / Train No-Name) */
+
+/* ===========================
+   Hero Search Tabs
+=========================== */
+
+.hero-search-tabs-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 28px;
+}
+
+.hero-search-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px;
+
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(18px);
+
+    border: 1px solid rgba(255, 255, 255, .8);
+    border-radius: 60px;
+
+    box-shadow:
+        0 15px 40px rgba(15, 23, 42, .12),
+        inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+.hero-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-width: 220px;
+    height: 54px;
+
+    padding: 0 26px;
+
+    border: none;
+    border-radius: 50px;
+
+    background: transparent;
+
+    color: #45607f;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all .3s ease;
+}
+
+.hero-tab i {
+    font-size: 15px;
+}
+
+.hero-tab:hover {
+    color: #0d6efd;
+    background: rgba(13, 110, 253, .08);
+}
+
+.hero-tab.active {
+    color: #fff;
+
+    background: linear-gradient(135deg,
+            #4da8ff,
+            #0d6efd);
+
+    box-shadow:
+        0 10px 24px rgba(13, 110, 253, .35);
+}
+
+.hero-tab.active:hover {
+    transform: none;
+}
+
+.hero-tab:focus-visible {
+    outline: 3px solid rgba(13, 110, 253, .3);
+    outline-offset: 2px;
+}
+
+.search-card {
+
+    position: relative;
+
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, .95),
+            rgba(238, 248, 255, .86));
+
+    backdrop-filter: blur(18px);
+
+    border: 1px solid rgba(255, 255, 255, .82);
+
+    border-radius: 18px;
+
+    padding: 30px;
+    padding-bottom: 80px;
+
+    max-width: 1400px;
+    margin: auto;
+
+    box-shadow:
+        0 24px 70px rgba(31, 94, 150, .18),
+        inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+.station-field {
+    position: relative;
+}
+
+.hero-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #27496b;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-align: left;
+}
+
+.custom-input {
+
+    height: 50px;
+
+    border-radius: 10px;
+
+    border: 1px solid rgba(255, 255, 255, .45);
+
+    font-size: 15px;
+
+    padding: 0 16px;
+
+    background: rgba(255, 255, 255, .96);
+
+    color: #162033;
+
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
+}
+
+.custom-input:focus {
+    border-color: #77b9ff;
+    box-shadow:
+        0 0 0 4px rgba(119, 185, 255, .22),
+        0 12px 26px rgba(15, 23, 42, .12);
+}
+
+.field-helper {
+    min-height: 18px;
+    margin-top: 7px;
+    color: #607d99;
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.swap-btn {
+
+    width: 50px;
+    height: 50px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: white;
+
+    color: #0f58c9;
+
+    font-size: 16px;
+
+    transition: .4s;
+
+    box-shadow: 0 12px 24px rgba(15, 23, 42, .16);
+}
+
+.swap-btn:hover {
+    transform: rotate(180deg);
+}
+
+.swap-btn:focus-visible,
+.search-btn-custom:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, .78);
+    outline-offset: 3px;
+}
+
+.swap-btn:active {
+    transform: translateY(2px) scale(.94) rotate(180deg);
+}
+
+
+.search-btn-wrapper {
+
+    position: absolute;
+
+    left: 50%;
+
+    bottom: -32px;
+
+    transform: translateX(-50%);
+}
+
+.search-btn-custom {
+
+    width: 270px;
+    height: 60px;
+
+    border: none;
+
+    border-radius: 50px;
+
+    background: linear-gradient(90deg,
+            #58aaf5,
+            #0d5dfd);
+
+    color: white;
+
+    font-size: 22px;
+
+    font-weight: 700;
+
+    letter-spacing: 0;
+
+    box-shadow:
+        0 10px 25px rgba(13, 93, 253, .35);
+
+    transition: .3s;
+}
+
+.search-btn-custom:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 15px 30px rgba(13, 93, 253, .45);
+}
+
+.search-btn-custom:disabled {
+    cursor: wait;
+    opacity: .82;
+    transform: none;
+}
+
+/* Suggestions */
+
+.suggestion-box {
+
+    position: absolute;
+    top: calc(100% - 14px);
+    left: 0;
+
+    width: 100%;
+
+    background: #fff;
+
+    border: 1px solid rgba(15, 23, 42, .08);
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    list-style: none;
+
+    padding: 0;
+    margin: 0;
+
+    z-index: 99999;
+
+    max-height: 276px;
+
+    overflow-y: auto;
+
+    box-shadow:
+        0 20px 42px rgba(15, 23, 42, .2);
+
+    text-align: left;
+}
+
+.suggestion-box li {
+
+    cursor: pointer;
+
+    border-bottom: 1px solid #f1f1f1;
+
+    transition: .25s;
+}
+
+.suggestion-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px;
+    color: #607086;
+    cursor: default;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.station-search-icon {
+    color: #0d6efd;
+    animation: stationTrainPulse .8s ease-in-out infinite alternate;
+}
+
+@keyframes stationTrainPulse {
+    to {
+        transform: translateX(5px);
+        opacity: .55;
+    }
+}
+
+.suggestion-box li:last-child {
+    border-bottom: none;
+}
+
+.suggestion-box li:hover,
+.suggestion-box li.active {
+
+    background: #eef6ff;
+}
+
+.station-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 13px 16px;
+}
+
+.station-code {
+    color: #0d6efd;
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+.station-icon {
+
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #e8f2ff;
+
+    color: #0d5dfd;
+
+    font-size: 16px;
+}
+
+.station-details {
+    min-width: 0;
+    flex: 1;
+}
+
+.station-name {
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    color: #172033;
+
+    white-space: normal;
+
+    /* overflow: hidden;
+
+    text-overflow: ellipsis; */
+
+    word-break: break-word;
+
+    line-height: 1.4;
+}
+
+.station-name span {
+
+    color: #0d6efd;
+
+    margin-left: 6px;
+
+    font-size: 13px;
+}
+
+.station-desc {
+
+    font-size: 13px;
+
+    color: #666;
+
+    margin-top: 4px;
+
+    white-space: normal;
+
+    overflow: hidden;
+
+    /* text-overflow: ellipsis; */
+    /* max-width: 100%; */
+    word-break: break-word;
+}
+
+/* Custom Scrollbar */
+
+.suggestion-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.suggestion-box::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.suggestion-box::-webkit-scrollbar-thumb {
+    background: #d0d0d0;
+    border-radius: 20px;
+}
+
+.suggestion-box::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* DATEPICKER FIX */
+
+.inp-date {
+    cursor: pointer;
+}
+
+.react-datepicker-popper {
+    z-index: 99999 !important;
+}
+
+.react-datepicker-wrapper {
+    width: 100%;
+}
+
+.react-datepicker__input-container {
+    width: 100%;
+}
+
+.react-datepicker {
+    border-radius: 15px !important;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.15);
+}
+
+.react-datepicker__header {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: white !important;
+    border-radius: 14px 14px 0 0;
+}
+
+.react-datepicker__day--disabled {
+    cursor: not-allowed !important;
+    color: #ccc !important;
+    background: transparent !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+    color: white;
+    font-weight: 600;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+    background: #2563eb !important;
+    /* border-radius: 50% !important; */
+}
+
+.react-datepicker__day:hover {
+    background: #eef3ff;
+    /* border-radius: 50% !important; */
+}
+
+.react-datepicker__day--outside-month {
+    opacity: 0.35 !important;
+    color: #999 !important;
+}
+
+.react-datepicker__triangle {
+    display: none;
+}
+
+.react-datepicker-popper {
+    z-index: 999999 !important;
+}
+
+@media (max-width: 992px) {
+
+    .hero-content h1 {
+        font-size: 2.5rem;
+        margin-top: 32px;
+    }
+
+    .swap-btn {
+        margin: auto;
+    }
+
+    .search-btn-custom {
+        width: 250px;
+    }
+
+    .search-card {
+        padding-bottom: 90px;
+        border-radius: 16px;
+    }
+
+    .suggestion-box {
+        top: calc(100% - 12px);
+    }
+
+    .hero-tab {
+        padding: 11px 20px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 576px) {
+
+    .hero-section {
+        min-height: auto;
+        padding: 58px 0 88px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.1rem;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
+        margin-bottom: 24px;
+    }
+
+    .search-card {
+        padding: 22px;
+        padding-bottom: 82px;
+    }
+
+    .search-btn-custom {
+        width: min(240px, calc(100vw - 72px));
+        height: 56px;
+        font-size: 18px;
+    }
+
+    .hero-search-tabs {
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .hero-tab {
+        flex: 1 1 calc(50% - 8px);
+        padding: 10px 14px;
+        font-size: 12.5px;
+    }
+}
