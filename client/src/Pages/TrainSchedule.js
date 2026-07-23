@@ -195,6 +195,8 @@ function TrainSchedule() {
         }
     }, [train?.trainNumber]);
 
+    const route = useMemo(() => train?.route || [], [train?.route]);
+
     // reset fare-estimator endpoints whenever a new train loads
     useEffect(() => {
         const route = train?.route || [];
@@ -205,7 +207,7 @@ function TrainSchedule() {
             setFareFrom("");
             setFareTo("");
         }
-    }, [train?.trainNumber]);
+    }, [route]);
 
     const toggleFavorite = () => {
         if (!train?.trainNumber) return;
@@ -267,7 +269,7 @@ function TrainSchedule() {
         setSearchParams({ train: manualQuery.trim(), date: checkDateKey });
     };
 
-    const route = train?.route || [];
+    // const route = useMemo(() => train?.route || [], [train?.route]);
 
     const filteredRoute = useMemo(() => {
         const q = stopFilter.trim().toLowerCase();
