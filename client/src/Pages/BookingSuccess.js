@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { API_BASE_URL } from "../config/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../Components/Navbar";
@@ -95,10 +97,10 @@ function BookingSuccess() {
         setDownloading(true);
 
         try {
-            const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-                import("html2canvas"),
-                import("jspdf")
-            ]);
+            // const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+            //     import("html2canvas"),
+            //     import("jspdf")
+            // ]);
 
             const canvas = await html2canvas(ticketRef.current, {
                 scale: 3,
