@@ -207,7 +207,7 @@ function TrainSchedule() {
             setFareFrom("");
             setFareTo("");
         }
-    }, [route]);
+    }, [train?.route]);
 
     const toggleFavorite = () => {
         if (!train?.trainNumber) return;
