@@ -119,7 +119,7 @@ function MyBookings() {
 
     useDocumentTitle('RailGo - My Bookings');
 
-    const fetchBookings = async () => {
+    const fetchBookings = useCallback(async () => {
         setLoading(true);
         setError("");
 
@@ -132,6 +132,7 @@ function MyBookings() {
                     }
                 }
             );
+
             setBookings(response.data.bookings || []);
         } catch (requestError) {
             setError(
@@ -141,7 +142,7 @@ function MyBookings() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchBookings();

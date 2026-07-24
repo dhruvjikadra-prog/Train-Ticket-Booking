@@ -497,15 +497,17 @@ function Hero() {
     };
 
     useEffect(() => {
-        const requestRef = requestIds.current;
+        const timers = debounceTimers.current;
+        const requests = requestIds.current;
+        const trainTimer = trainDebounceTimer.current;
 
         return () => {
-            Object.values(debounceTimers.current).forEach(window.clearTimeout);
+            Object.values(timers).forEach((timer) => window.clearTimeout(timer));
 
-            requestRef.from += 1;
-            requestRef.to += 1;
+            requests.from += 1;
+            requests.to += 1;
 
-            window.clearTimeout(trainDebounceTimer.current);
+            window.clearTimeout(trainTimer);
             trainRequestId.current += 1;
         };
     }, []);
