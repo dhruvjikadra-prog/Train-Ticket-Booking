@@ -76,7 +76,7 @@ function AdminLogin() {
             setLockSecondsLeft((s) => Math.max(0, s - 1));
         }, 1000);
         return () => clearInterval(lockIntervalRef.current);
-    }, [lockSecondsLeft > 0]);
+    }, [lockSecondsLeft]);
 
     /* --------------------------------- validation --------------------------------- */
 

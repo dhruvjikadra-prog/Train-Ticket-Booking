@@ -9,7 +9,7 @@ function Footer() {
                 <div className="footer-grid">
                     <div className="footer-brand">
                         <Link className="footer-logo" to="/">
-                            <img src={Logo} height={"30px"} width={"30px"} style={{borderRadius: "25px"}} />
+                            <img src={Logo} alt="RailGo" height={"30px"} width={"30px"} style={{borderRadius: "25px"}} />
                             <span>RailGo</span>
                         </Link>
                         <p>

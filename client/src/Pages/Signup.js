@@ -91,7 +91,7 @@ function Signup() {
     if (user && token) {
       navigate("/");
     }
-  }, []);
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

@@ -497,14 +497,14 @@ function Hero() {
     };
 
     useEffect(() => {
-        const timers = debounceTimers.current;
+        const requestRef = requestIds.current;
 
         return () => {
-            Object.values(timers).forEach((timer) =>
-                window.clearTimeout(timer)
-            );
-            requestIds.current.from += 1;
-            requestIds.current.to += 1;
+            Object.values(debounceTimers.current).forEach(window.clearTimeout);
+
+            requestRef.from += 1;
+            requestRef.to += 1;
+
             window.clearTimeout(trainDebounceTimer.current);
             trainRequestId.current += 1;
         };
@@ -855,7 +855,7 @@ function Hero() {
                                             onChange={(e) =>
                                                 setTrainClass(e.target.value)
                                             }
-                                            style={{ cursor: 'pointer'}}
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             <option>All Class</option>
                                             <option>Sleeper</option>
@@ -892,7 +892,7 @@ function Hero() {
                             {/* FLOATING SEARCH BUTTON */}
 
                             <div className="search-btn-wrapper">
-                                
+
                                 <button
                                     type="button"
                                     className="search-btn-custom"

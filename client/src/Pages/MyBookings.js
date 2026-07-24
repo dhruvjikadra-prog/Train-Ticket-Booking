@@ -145,7 +145,7 @@ function MyBookings() {
 
     useEffect(() => {
         fetchBookings();
-    }, []);
+    }, [fetchBookings]);
 
     useEffect(() => {
         if (!toast) return undefined;

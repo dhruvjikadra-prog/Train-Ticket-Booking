@@ -251,7 +251,7 @@ function SeatSelection() {
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, [token, navigate]);
 
     useEffect(() => {
         loadSeatSelection();

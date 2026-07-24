@@ -63,7 +63,7 @@ function Login() {
         if (user && token) {
             navigate("/");
         }
-    }, []);
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -113,7 +113,7 @@ function Login() {
             <div className="auth-brand">
                 <div className="auth-brand-logo">
                     {/* <i className="fa-solid fa-train-subway"></i> */}
-                    <img src={Logo} height={"40px"} width={"40px"} style={{borderRadius: "25px"}} />
+                    <img src={Logo} alt="Logo" height={"40px"} width={"40px"} style={{borderRadius: "25px"}} />
                     RailGo
                 </div>
 
