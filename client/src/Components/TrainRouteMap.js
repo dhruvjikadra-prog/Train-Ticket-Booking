@@ -204,11 +204,11 @@ function TrainRouteMap({ route = [], trainNumber, liveInfo = null }) {
 
     // Quick lookup of this train's own schedule info (arrival/departure/
     // distance/halt) per station code, for the stop popups.
-    const scheduleByCode = useMemo(() => {
-        const map = new Map();
-        route.forEach((stop) => map.set(stop.stationCode, stop));
-        return map;
-    }, [route]);
+    // const scheduleByCode = useMemo(() => {
+    //     const map = new Map();
+    //     route.forEach((stop) => map.set(stop.stationCode, stop));
+    //     return map;
+    // }, [route]);
 
     // Only points the API flagged isStop:true get a marker. Their
     // popup details are merged in from the train's own schedule.

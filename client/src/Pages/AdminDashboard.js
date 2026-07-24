@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../config/api";
-import { href, Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faArrowsRotate,
@@ -31,7 +31,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "../Styles/AdminDashboard.css";
 import RailGo from "../Assets/logo.png";
-import { icon } from "@fortawesome/fontawesome-svg-core";
+// import { icon } from "@fortawesome/fontawesome-svg-core";
 
 const AUTH_API_BASE = `${API_BASE_URL}/admin/auth`;
 const DASHBOARD_API_BASE = `${API_BASE_URL}/admin/dashboard`;
@@ -400,7 +400,7 @@ function AdminDashboard() {
 
                         <section className="ad-stats-grid" aria-label="Admin metrics">
                             {summaryCards.map((card) => {
-                                const Icon = card.icon;
+                                // const Icon = card.icon;
                                 return (
                                     <article className="ad-stat-card" data-tone={card.tone} key={card.label}>
                                         <div className="ad-stat-icon">

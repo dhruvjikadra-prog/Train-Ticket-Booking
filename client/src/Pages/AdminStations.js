@@ -8,8 +8,6 @@ import {
     faBars,
     faChevronLeft,
     faChevronRight,
-    faClipboardList,
-    faCreditCard,
     faFilter,
     faLocationDot,
     faLock,

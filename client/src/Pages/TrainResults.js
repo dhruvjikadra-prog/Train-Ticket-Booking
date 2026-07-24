@@ -185,12 +185,12 @@ const getTrainTypeCategory = (train) => {
     return "express";
 };
 
-const trainTypeLabels = {
-    premium: "Premium",
-    superfast: "Superfast",
-    express: "Express",
-    passenger: "Passenger",
-};
+// const trainTypeLabels = {
+//     premium: "Premium",
+//     superfast: "Superfast",
+//     express: "Express",
+//     passenger: "Passenger",
+// };
 
 /* ── Sorting helper (Departure / Arrival / Duration / Price) ─ */
 const getSortValue = (train, key, trainClass) => {
