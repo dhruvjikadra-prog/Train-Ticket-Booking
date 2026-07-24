@@ -14,7 +14,7 @@ const app = express();
 
 connectDB();
 
-const clientOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:3000")
+const clientOrigins = (process.env.CLIENT_ORIGIN || "https://railgo-train-ticket-booking.vercel.app/")
     .split(",")
     .map((origin) => origin.trim().replace(/\/+$/, ""))
     .filter(Boolean);
