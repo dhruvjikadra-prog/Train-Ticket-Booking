@@ -1,3 +1,7 @@
+const dns = require("dns");
+
+dns.setDefaultResultOrder("ipv4first");
+
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
@@ -34,9 +38,12 @@ const sendEmail = async ({
             html,
             attachments,
         });
+
+        console.log("Email Sent:", info.messageId);
         return info;
 
     } catch (err) {
+        console.error("Email Error:", err);
         throw err;
     }
 };
