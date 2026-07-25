@@ -11,7 +11,7 @@ const {
     releaseSeatsForBooking
 } = require("../services/coachService");
 
-const sendEmail = require("../services/emailService");
+// const sendEmail = require("../services/emailService");
 const bookingSuccessTemplate = require("../templates/bookingSuccess");
 
 const SUPPORTED_METHODS = [
@@ -480,32 +480,32 @@ const createPayment = async (req, res) => {
             .populate("trainId", "name trainNumber")
             .lean();
 
-        const recipientEmail = ticketBooking.contact?.email;
+        // const recipientEmail = ticketBooking.contact?.email;
 
-        if (recipientEmail) {
-            await sendEmail({
-                to: recipientEmail,
-                subject: `Ticket Confirmed - PNR ${ticketBooking.pnrNumber}`,
-                html: bookingSuccessTemplate({
-                    passengerName:
-                        ticketBooking.passengers?.[0]?.name || "Passenger",
-                    trainName:
-                        ticketBooking.trainId?.name || "",
-                    trainNumber:
-                        ticketBooking.trainId?.trainNumber || "",
-                    pnr: ticketBooking.pnrNumber,
-                    from: ticketBooking.fromStation,
-                    to: ticketBooking.toStation,
-                    journeyDate: ticketBooking.journeyDate,
-                    seatNo:
-                        ticketBooking.selectedSeats?.join(", ")
-                })
-            });
+        // if (recipientEmail) {
+        //     await sendEmail({
+        //         to: recipientEmail,
+        //         subject: `Ticket Confirmed - PNR ${ticketBooking.pnrNumber}`,
+        //         html: bookingSuccessTemplate({
+        //             passengerName:
+        //                 ticketBooking.passengers?.[0]?.name || "Passenger",
+        //             trainName:
+        //                 ticketBooking.trainId?.name || "",
+        //             trainNumber:
+        //                 ticketBooking.trainId?.trainNumber || "",
+        //             pnr: ticketBooking.pnrNumber,
+        //             from: ticketBooking.fromStation,
+        //             to: ticketBooking.toStation,
+        //             journeyDate: ticketBooking.journeyDate,
+        //             seatNo:
+        //                 ticketBooking.selectedSeats?.join(", ")
+        //         })
+        //     });
 
-            console.log("Booking confirmation email sent.");
-        } else {
-            console.log("No passenger email found.");
-        }
+        //     console.log("Booking confirmation email sent.");
+        // } else {
+        //     console.log("No passenger email found.");
+        // }
 
         return res.status(201).json({
             message: "Payment successful and booking confirmed.",
