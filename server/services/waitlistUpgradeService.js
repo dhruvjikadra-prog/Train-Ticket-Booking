@@ -5,7 +5,7 @@ const {
     releaseSeatsForBooking
 } = require("./coachService");
 const { buildJourneyDateFilter } = require("../utils/journeyDate");
-const sendEmail = require("./emailService");
+// const sendEmail = require("./emailService");
 const bookingSuccessTemplate = require("../templates/bookingSuccess");
 
 // A passenger is "in the queue" if they're still waiting for a seat: their
@@ -69,28 +69,28 @@ const recalculateBookingAfterUpgrade = async (bookingId) => {
 };
 
 // Best-effort confirmation email; never allowed to block a promotion.
-const notifyPassengerUpgraded = async (booking, passenger, seatCode) => {
-    try {
-        if (!booking.contact?.email) return;
+// const notifyPassengerUpgraded = async (booking, passenger, seatCode) => {
+//     try {
+//         if (!booking.contact?.email) return;
 
-        await sendEmail({
-            to: booking.contact.email,
-            subject: `Seat Confirmed - PNR ${booking.pnrNumber || booking.bookingToken}`,
-            html: bookingSuccessTemplate({
-                passengerName: passenger.name,
-                trainName: "",
-                trainNumber: booking.trainNo,
-                pnr: booking.pnrNumber,
-                from: booking.fromStation,
-                to: booking.toStation,
-                journeyDate: booking.journeyDate,
-                seatNo: seatCode
-            })
-        });
-    } catch (emailError) {
-        console.error("waitlist upgrade email error:", emailError);
-    }
-};
+//         await sendEmail({
+//             to: booking.contact.email,
+//             subject: `Seat Confirmed - PNR ${booking.pnrNumber || booking.bookingToken}`,
+//             html: bookingSuccessTemplate({
+//                 passengerName: passenger.name,
+//                 trainName: "",
+//                 trainNumber: booking.trainNo,
+//                 pnr: booking.pnrNumber,
+//                 from: booking.fromStation,
+//                 to: booking.toStation,
+//                 journeyDate: booking.journeyDate,
+//                 seatNo: seatCode
+//             })
+//         });
+//     } catch (emailError) {
+//         console.error("waitlist upgrade email error:", emailError);
+//     }
+// };
 
 /**
  * Promotes waitlisted (WL) passengers to confirmed seats, one at a time, in
