@@ -1,28 +1,11 @@
-const dns = require("dns");
+const brevo = require("@getbrevo/brevo");
 
-dns.setDefaultResultOrder("ipv4first");
+const apiInstance = new brevo.TransactionalEmailsApi();
 
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    logger: true,
-    debug: true,
-});
-
-transporter.verify((error, success) => {
-    if (error) {
-        console.error("SMTP Verify Error:", error);
-    } else {
-        console.log("SMTP Server Ready");
-    }
-});
+apiInstance.setApiKey(
+    brevo.TransactionalEmailsApiApiKeys.apiKey,
+    process.env.BREVO_API_KEY
+);
 
 const sendEmail = async ({
     to,
@@ -30,22 +13,30 @@ const sendEmail = async ({
     html,
     attachments = []
 }) => {
-    try {
-        const info = await transporter.sendMail({
-            from: `"RailGo" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            html,
-            attachments,
-        });
 
-        console.log("Email Sent:", info.messageId);
-        return info;
+    const email = {
+        sender: {
+            name: "RailGo",
+            email: "dhruvjikadra@gmail.com"
+        },
 
-    } catch (err) {
-        console.error("Email Error:", err);
-        throw err;
-    }
+        to: [
+            {
+                email: to
+            }
+        ],
+
+        subject,
+
+        htmlContent: html,
+
+        attachment: attachments.map(file => ({
+            name: file.filename,
+            content: file.content.toString("base64")
+        }))
+    };
+
+    return await apiInstance.sendTransacEmail(email);
 };
 
 module.exports = sendEmail;
