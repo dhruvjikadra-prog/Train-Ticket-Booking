@@ -1,4 +1,28 @@
-const axios = require("axios");
+const dns = require("dns");
+
+dns.setDefaultResultOrder("ipv4first");
+
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+    logger: true,
+    debug: true,
+});
+
+transporter.verify((error, success) => {
+    if (error) {
+        console.error("SMTP Verify Error:", error);
+    } else {
+        console.log("SMTP Server Ready");
+    }
+});
 
 const sendEmail = async ({
     to,
@@ -6,48 +30,20 @@ const sendEmail = async ({
     html,
     attachments = []
 }) => {
-    const payload = {
-        sender: {
-            name: "RailGo",
-            email: process.env.BREVO_SENDER_EMAIL,
-        },
-
-        to: [
-            {
-                email: to,
-            },
-        ],
-
-        subject,
-        htmlContent: html,
-
-        attachment: attachments.map(file => ({
-            name: file.filename,
-            content: Buffer.isBuffer(file.content)
-                ? file.content.toString("base64")
-                : file.content
-        }))
-    };
-
     try {
-        const response = await axios.post(
-            "https://api.brevo.com/v3/smtp/email",
-            payload,
-            {
-                headers: {
-                    "api-key": process.env.BREVO_API_KEY,
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                }
-            }
-        );
+        const info = await transporter.sendMail({
+            from: `"RailGo" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            html,
+            attachments,
+        });
 
-        return response.data;
+        console.log("Email Sent:", info.messageId);
+        return info;
+
     } catch (err) {
-        console.error(
-            "Brevo Error:",
-            err.response?.data || err.message
-        );
+        console.error("Email Error:", err);
         throw err;
     }
 };
