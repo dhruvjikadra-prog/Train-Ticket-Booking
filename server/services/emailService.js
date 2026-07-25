@@ -1,11 +1,4 @@
-const brevo = require("@getbrevo/brevo");
-
-const apiInstance = new brevo.TransactionalEmailsApi();
-
-apiInstance.setApiKey(
-    brevo.TransactionalEmailsApiApiKeys.apiKey,
-    process.env.BREVO_API_KEY
-);
+const axios = require("axios");
 
 const sendEmail = async ({
     to,
@@ -13,30 +6,50 @@ const sendEmail = async ({
     html,
     attachments = []
 }) => {
-
-    const email = {
+    const payload = {
         sender: {
             name: "RailGo",
-            email: "dhruvjikadra@gmail.com"
+            email: process.env.BREVO_SENDER_EMAIL,
         },
 
         to: [
             {
-                email: to
-            }
+                email: to,
+            },
         ],
 
         subject,
-
         htmlContent: html,
 
         attachment: attachments.map(file => ({
             name: file.filename,
-            content: file.content.toString("base64")
+            content: Buffer.isBuffer(file.content)
+                ? file.content.toString("base64")
+                : file.content
         }))
     };
 
-    return await apiInstance.sendTransacEmail(email);
+    try {
+        const response = await axios.post(
+            "https://api.brevo.com/v3/smtp/email",
+            payload,
+            {
+                headers: {
+                    "api-key": process.env.BREVO_API_KEY,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
+            }
+        );
+
+        return response.data;
+    } catch (err) {
+        console.error(
+            "Brevo Error:",
+            err.response?.data || err.message
+        );
+        throw err;
+    }
 };
 
 module.exports = sendEmail;
