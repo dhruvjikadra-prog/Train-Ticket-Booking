@@ -153,13 +153,37 @@ const getArrivalMinutes = (train) => (
 );
 
 const computeDurationMinutes = (train) => {
-    const dep = train.boardingStation?.departureTime || train.departureTime;
-    const arr = train.droppingStation?.arrivalTime || train.arrivalTime;
-    const depMinutes = timeToMinutes(dep);
-    const arrMinutes = timeToMinutes(arr);
+    const route = train.route || [];
+
+    const fromCode = train.boardingStation?.stationCode;
+    const toCode = train.droppingStation?.stationCode;
+
+    const fromStop = route.find(
+        (station) => station.stationCode === fromCode
+    );
+
+    const toStop = route.find(
+        (station) => station.stationCode === toCode
+    );
+
+    if (!fromStop || !toStop) return null;
+
+    const depMinutes = timeToMinutes(fromStop.departureTime);
+    const arrMinutes = timeToMinutes(toStop.arrivalTime);
+
     if (depMinutes === null || arrMinutes === null) return null;
-    let mins = arrMinutes - depMinutes;
-    if (mins < 0) mins += 24 * 60; // overnight
+
+    const fromDay = fromStop.day || 1;
+    const toDay = toStop.day || 1;
+
+    let mins =
+        arrMinutes -
+        depMinutes +
+        (toDay - fromDay) * 24 * 60;
+
+    // Safety for incorrect data
+    if (mins < 0) mins += 24 * 60;
+
     return mins;
 };
 
@@ -339,15 +363,22 @@ const getSeatAvailability = (train, trainClass) => {
 
 /* ── Duration from route ─────────────────────────────────── */
 const computeDuration = (train) => {
-    if (train.duration) return train.duration;
-    const dep = train.boardingStation?.departureTime || train.departureTime;
-    const arr = train.droppingStation?.arrivalTime || train.arrivalTime;
-    const depMinutes = timeToMinutes(dep);
-    const arrMinutes = timeToMinutes(arr);
-    if (depMinutes === null || arrMinutes === null) return "—";
-    let mins = arrMinutes - depMinutes;
-    if (mins < 0) mins += 24 * 60; // overnight
-    return `${Math.floor(mins / 60)}h ${mins % 60}min`;
+    const mins = computeDurationMinutes(train);
+
+    if (mins === null) return "—";
+
+    const hours = Math.floor(mins / 60);
+    const minutes = mins % 60;
+
+    if (hours === 0) {
+        return `${minutes}m`;
+    }
+
+    if (minutes === 0) {
+        return `${hours}h`;
+    }
+
+    return `${hours}h ${minutes}m`;
 };
 
 /* ── Journey distance ────────────────────────────────────── */
@@ -776,77 +807,77 @@ function TrainCard({
                                 const refreshedTime = formatRefreshTime(refreshState.updatedAt);
 
                                 return (
-                                <div
-                                    key={seat.key}
-                                    onClick={() => setSelectedClass(seat)}
-                                    className={`seat-chip ${selectedClass?.key === seat.key ? "selected" : ""
-                                        } ${seat.count === 0 && seat.waitlistCount === 0
-                                            ? "sold-out"
-                                            : ""
-                                        } ${refreshState.loading ? "refreshing" : ""} ${refreshState.error ? "refresh-error" : ""}`}
-                                >
-                                    <div className="seat-chip-top">
-                                        <span className="seat-chip-name">
-                                            {seat.label}
-                                        </span>
+                                    <div
+                                        key={seat.key}
+                                        onClick={() => setSelectedClass(seat)}
+                                        className={`seat-chip ${selectedClass?.key === seat.key ? "selected" : ""
+                                            } ${seat.count === 0 && seat.waitlistCount === 0
+                                                ? "sold-out"
+                                                : ""
+                                            } ${refreshState.loading ? "refreshing" : ""} ${refreshState.error ? "refresh-error" : ""}`}
+                                    >
+                                        <div className="seat-chip-top">
+                                            <span className="seat-chip-name">
+                                                {seat.label}
+                                            </span>
 
-                                        <span
-                                            className={`seat-count-badge ${seat.soldOut ? "waitlist-badge" : ""
-                                                }`}
-                                            title={
-                                                seat.count > 0
-                                                    ? `${seat.count} seats available on ${formatDate(journeyDate)}`
+                                            <span
+                                                className={`seat-count-badge ${seat.soldOut ? "waitlist-badge" : ""
+                                                    }`}
+                                                title={
+                                                    seat.count > 0
+                                                        ? `${seat.count} seats available on ${formatDate(journeyDate)}`
+                                                        : seat.waitlistCount >= 0
+                                                            ? `No seats available. ${seat.waitlistCount} passenger(s) currently on the waiting list.`
+                                                            : "No seats available."
+                                                }
+                                            >
+                                                {seat.count > 0
+                                                    ? seat.count
                                                     : seat.waitlistCount >= 0
-                                                        ? `No seats available. ${seat.waitlistCount} passenger(s) currently on the waiting list.`
-                                                        : "No seats available."
-                                            }
-                                        >
-                                            {seat.count > 0
-                                                ? seat.count
-                                                : seat.waitlistCount >= 0
-                                                    ? `WL ${seat.waitlistCount}`
-                                                    : "NA"}
-                                        </span>
+                                                        ? `WL ${seat.waitlistCount}`
+                                                        : "NA"}
+                                            </span>
+                                        </div>
+
+                                        <div className="seat-chip-bottom">
+                                            {seat.price > 0 && (
+                                                <span className="seat-fare">
+                                                    ₹ {seat.price.toLocaleString("en-IN")}
+                                                </span>
+                                            )}
+
+                                            <button
+                                                type="button"
+                                                className="seat-refresh-btn"
+                                                disabled={
+                                                    refreshState.loading ||
+                                                    !boardingStation.stationCode ||
+                                                    !droppingStation.stationCode
+                                                }
+                                                onClick={(event) => handleRefreshClass(event, seat)}
+                                                aria-label={`Refresh ${seat.label} availability`}
+                                                title={`Refresh ${seat.label} availability`}
+                                            >
+                                                <i className={`fa-solid ${refreshState.loading ? "fa-spinner" : "fa-rotate-right"}`}></i>
+                                                <span>{refreshState.loading ? "Refreshing" : "Refresh"}</span>
+                                            </button>
+                                        </div>
+
+                                        {refreshedTime && !refreshState.error && (
+                                            <span className="seat-refresh-time">
+                                                <i className="fa-regular fa-clock"></i>
+                                                Updated {refreshedTime}
+                                            </span>
+                                        )}
+
+                                        {refreshState.error && (
+                                            <span className="seat-refresh-error">
+                                                <i className="fa-solid fa-circle-exclamation"></i>
+                                                {refreshState.error}
+                                            </span>
+                                        )}
                                     </div>
-
-                                    <div className="seat-chip-bottom">
-                                        {seat.price > 0 && (
-                                        <span className="seat-fare">
-                                            ₹ {seat.price.toLocaleString("en-IN")}
-                                        </span>
-                                    )}
-
-                                        <button
-                                            type="button"
-                                            className="seat-refresh-btn"
-                                            disabled={
-                                                refreshState.loading ||
-                                                !boardingStation.stationCode ||
-                                                !droppingStation.stationCode
-                                            }
-                                            onClick={(event) => handleRefreshClass(event, seat)}
-                                            aria-label={`Refresh ${seat.label} availability`}
-                                            title={`Refresh ${seat.label} availability`}
-                                        >
-                                            <i className={`fa-solid ${refreshState.loading ? "fa-spinner" : "fa-rotate-right"}`}></i>
-                                            <span>{refreshState.loading ? "Refreshing" : "Refresh"}</span>
-                                        </button>
-                                    </div>
-
-                                    {refreshedTime && !refreshState.error && (
-                                        <span className="seat-refresh-time">
-                                            <i className="fa-regular fa-clock"></i>
-                                            Updated {refreshedTime}
-                                        </span>
-                                    )}
-
-                                    {refreshState.error && (
-                                        <span className="seat-refresh-error">
-                                            <i className="fa-solid fa-circle-exclamation"></i>
-                                            {refreshState.error}
-                                        </span>
-                                    )}
-                                </div>
                                 );
                             })}
                         </div>

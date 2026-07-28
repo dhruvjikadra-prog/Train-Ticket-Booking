@@ -58,12 +58,17 @@
     display: flex;
     justify-content: center;
     margin-bottom: 28px;
+    width: 100%;
+    padding: 0 12px;
 }
 
 .hero-search-tabs {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+
+    width: 100%;
+    max-width: 480px;
 
     padding: 6px;
 
@@ -84,10 +89,11 @@
     justify-content: center;
     gap: 8px;
 
-    min-width: 220px;
+    flex: 1 1 0;
+    min-width: 0;
     height: 54px;
 
-    padding: 0 26px;
+    padding: 0 16px;
 
     border: none;
     border-radius: 50px;
@@ -98,14 +104,22 @@
 
     font-size: 15px;
     font-weight: 600;
+    white-space: nowrap;
 
     cursor: pointer;
 
     transition: all .3s ease;
 }
 
+.hero-tab span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .hero-tab i {
     font-size: 15px;
+    flex-shrink: 0;
 }
 
 .hero-tab:hover {
@@ -551,7 +565,16 @@
     }
 
     .swap-btn {
-        margin: auto;
+        margin: 6px auto;
+        transform: rotate(90deg);
+    }
+
+    .swap-btn:hover {
+        transform: rotate(270deg);
+    }
+
+    .swap-btn:active {
+        transform: translateY(2px) scale(.94) rotate(270deg);
     }
 
     .search-btn-custom {
@@ -568,7 +591,44 @@
     }
 
     .hero-tab {
-        padding: 11px 20px;
+        padding: 0 18px;
+        font-size: 13px;
+        height: 50px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .hero-content h1 {
+        font-size: 2.2rem;
+        margin-top: 24px;
+    }
+
+    .hero-content p {
+        font-size: 1.05rem;
+    }
+
+    .search-card {
+        padding: 24px;
+        padding-bottom: 86px;
+    }
+
+    .search-card .row.g-3>[class^="col-"] {
+        margin-bottom: 4px;
+    }
+
+    .hero-search-tabs {
+        max-width: 420px;
+    }
+
+    .hero-tab {
+        height: 48px;
+        padding: 0 12px;
+        font-size: 12.5px;
+        gap: 6px;
+    }
+
+    .hero-tab i {
         font-size: 13px;
     }
 }
@@ -577,37 +637,124 @@
 
     .hero-section {
         min-height: auto;
-        padding: 58px 0 88px;
+        padding: 48px 0 72px;
     }
 
     .hero-content h1 {
-        font-size: 2.1rem;
+        font-size: 1.85rem;
+        line-height: 1.25;
     }
 
     .hero-content p {
-        font-size: 1rem;
-        margin-bottom: 24px;
+        font-size: .95rem;
+        margin-bottom: 20px;
     }
 
     .search-card {
-        padding: 22px;
-        padding-bottom: 82px;
+        padding: 18px;
+        padding-bottom: 78px;
+        border-radius: 14px;
     }
 
     .search-btn-custom {
-        width: min(240px, calc(100vw - 72px));
-        height: 56px;
-        font-size: 18px;
+        width: min(230px, calc(100vw - 64px));
+        height: 54px;
+        font-size: 17px;
+    }
+
+    .search-btn-wrapper {
+        bottom: -28px;
+    }
+
+    .hero-search-tabs-wrapper {
+        padding: 0 8px;
+        margin-bottom: 18px;
     }
 
     .hero-search-tabs {
-        gap: 8px;
-        margin-bottom: 14px;
+        gap: 4px;
+        padding: 4px;
+        max-width: 100%;
     }
 
     .hero-tab {
-        flex: 1 1 calc(50% - 8px);
-        padding: 10px 14px;
-        font-size: 12.5px;
+        height: 44px;
+        padding: 0 8px;
+        font-size: 11.5px;
+        gap: 5px;
+        border-radius: 44px;
+    }
+
+    .hero-tab i {
+        font-size: 12px;
+    }
+
+    .custom-input {
+        height: 46px;
+        font-size: 14px;
+    }
+
+    .hero-label {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .field-helper {
+        font-size: 11px;
+    }
+
+    .swap-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 14px;
+    }
+
+    .station-icon {
+        width: 34px;
+        min-width: 34px;
+        height: 34px;
+        font-size: 14px;
+    }
+
+    .station-name {
+        font-size: 14px;
+    }
+
+    .station-desc {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 400px) {
+
+    .hero-content h1 {
+        font-size: 1.6rem;
+    }
+
+    .hero-search-tabs {
+        flex-direction: column;
+        border-radius: 20px;
+        gap: 6px;
+    }
+
+    .hero-tab {
+        width: 100%;
+        border-radius: 16px;
+        justify-content: flex-start;
+        padding-left: 16px;
+    }
+
+    .search-card {
+        padding: 16px;
+        padding-bottom: 76px;
+    }
+
+    .search-btn-wrapper {
+        width: calc(100% - 32px);
+    }
+
+    .search-btn-custom {
+        width: 100%;
+        max-width: none;
     }
 }
