@@ -11,7 +11,9 @@ const OBJECT_ID_REGEX = /\b[a-f0-9]{24}\b/i;
 
 // RailGo booking tokens — adjust the prefix list if your bookingToken format
 // differs (currently assumes something like "RG-AB12CD34").
+const HEX_BOOKING_TOKEN_REGEX = /\b[a-f0-9]{48}\b/i;
 const BOOKING_TOKEN_REGEX = /\b(?:RG|BKG|BOOK)[-_]?[A-Z0-9]{6,}\b/i;
+const TRANSACTION_ID_REGEX = /\bTXN[A-Z0-9]{8,}\b/i;
 
 // PNR numbers are numeric. We accept 8-12 digits to be tolerant of format
 // changes, but a 10-digit PNR (IRCTC-style) will always match first because
@@ -25,7 +27,7 @@ const INTENTS = [
     {
         name: "pnr_status",
         weight: 3,
-        keywords: ["pnr", "pnr status", "check pnr", "ticket status", "journey status"]
+        keywords: ["pnr", "my pnr", "pnr number", "pnr status", "check pnr", "ticket status", "journey status"]
     },
     {
         name: "cancel_booking",
@@ -35,12 +37,12 @@ const INTENTS = [
     {
         name: "payment_status",
         weight: 2,
-        keywords: ["payment", "paid", "payment failed", "transaction", "money debited", "refund", "refund status"]
+        keywords: ["payment", "paid", "payment failed", "transaction", "transaction id", "receipt", "money debited", "refund", "refund status"]
     },
     {
         name: "booking_status",
         weight: 2,
-        keywords: ["booking status", "my booking", "my ticket", "booking detail", "latest booking", "recent booking", "booking details"]
+        keywords: ["booking status", "find booking", "show booking", "my booking", "my ticket", "ticket details", "booking detail", "latest booking", "recent booking", "last booking", "booking details", "booking reference"]
     },
     {
         name: "booking_help",
@@ -81,10 +83,11 @@ const extractEntities = (rawMessage) => {
     const message = String(rawMessage || "");
 
     const objectId = message.match(OBJECT_ID_REGEX)?.[0] || null;
-    const bookingToken = message.match(BOOKING_TOKEN_REGEX)?.[0] || null;
+    const bookingToken = message.match(HEX_BOOKING_TOKEN_REGEX)?.[0] || message.match(BOOKING_TOKEN_REGEX)?.[0] || null;
+    const transactionId = message.match(TRANSACTION_ID_REGEX)?.[0] || null;
     const pnrNumber = !bookingToken ? message.match(PNR_REGEX)?.[0] || null : null;
 
-    return { objectId, bookingToken, pnrNumber };
+    return { objectId, bookingToken, pnrNumber, transactionId };
 };
 
 /**

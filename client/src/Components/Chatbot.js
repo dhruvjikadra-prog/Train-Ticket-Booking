@@ -21,10 +21,10 @@ const initialMessages = [
     }
 ];
 
-const quickPrompts = [
-    "How do I book a ticket?",
+const defaultQuickPrompts = [
+    "Find my latest booking",
     "Check my PNR status",
-    "Payment failed",
+    "Payment status",
     "Cancel booking"
 ];
 
@@ -58,6 +58,7 @@ function Chatbot() {
     const [isSending, setIsSending] = useState(false);
     const [serverOnline, setServerOnline] = useState(null);
     const [conversationContext, setConversationContext] = useState({});
+    const [quickPrompts, setQuickPrompts] = useState(defaultQuickPrompts);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -90,6 +91,33 @@ function Chatbot() {
         setInput("");
         setServerOnline(null);
         setConversationContext({});
+        setQuickPrompts(defaultQuickPrompts);
+    };
+
+    const getAuthHeaders = () => {
+        const token = window.localStorage.getItem("token");
+
+        if (!token || token === "null" || token === "undefined") {
+            return {};
+        }
+
+        return { Authorization: `Bearer ${token}` };
+    };
+
+    const updateQuickPrompts = (suggestions) => {
+        if (!Array.isArray(suggestions) || suggestions.length === 0) {
+            return;
+        }
+
+        const normalizedSuggestions = suggestions
+            .filter(Boolean)
+            .map((suggestion) => String(suggestion).trim())
+            .filter(Boolean)
+            .slice(0, 4);
+
+        if (normalizedSuggestions.length > 0) {
+            setQuickPrompts(normalizedSuggestions);
+        }
     };
 
     const sendMessage = async (messageText = input) => {
@@ -108,8 +136,6 @@ function Chatbot() {
         setIsSending(true);
 
         try {
-            const token = window.localStorage.getItem("token");
-
             const response = await axios.post(
                 `${API_BASE_URL}/chatbot/message`,
                 {
@@ -117,11 +143,12 @@ function Chatbot() {
                     context: conversationContext
                 },
                 {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                    headers: getAuthHeaders()
                 }
             );
 
             setServerOnline(true);
+            updateQuickPrompts(response.data?.suggestions);
 
             if (response.data?.context) {
                 setConversationContext(response.data.context);
@@ -130,7 +157,8 @@ function Chatbot() {
             const assistantMessage = {
                 id: `assistant-${Date.now()}`,
                 role: "assistant",
-                text: response.data?.reply || buildFallbackReply(trimmedMessage)
+                text: response.data?.reply || buildFallbackReply(trimmedMessage),
+                result: response.data?.result || null
             };
 
             setMessages((current) => [...current, assistantMessage]);
@@ -138,11 +166,13 @@ function Chatbot() {
             setServerOnline(false);
 
             const serverReply = error.response?.data?.reply;
+            updateQuickPrompts(error.response?.data?.suggestions);
 
             const fallbackMessage = {
                 id: `assistant-${Date.now()}`,
                 role: "assistant",
-                text: serverReply || buildFallbackReply(trimmedMessage)
+                text: serverReply || buildFallbackReply(trimmedMessage),
+                result: error.response?.data?.result || null
             };
 
             setMessages((current) => [...current, fallbackMessage]);

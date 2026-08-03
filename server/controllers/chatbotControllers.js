@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// Adjust these two paths to match your project structure if different.
 const Booking = require("../models/Booking");
 const Payment = require("../models/Payment");
 
@@ -11,10 +10,21 @@ const MAX_MESSAGE_LENGTH = 300;
 
 const DATA_INTENTS = ["pnr_status", "booking_status", "payment_status", "cancel_booking"];
 
-// Static replies for intents that don't need a DB lookup at all.
+const BOOKING_POPULATE = {
+    path: "trainId",
+    select: "name trainName trainNumber route departureTime arrivalTime source destination"
+};
+
+const defaultSuggestions = [
+    "Find my latest booking",
+    "Check my PNR status",
+    "Payment status",
+    "Cancel booking"
+];
+
 const staticCatalog = {
     greeting:
-        "Hi! I can check your PNR, booking, and payment status directly from your account, or help with train search, seats, cancellations, and login issues. What would you like to do?",
+        "Hi! I can find your latest booking, PNR status, and payment status when you are signed in. You can also ask about train search, seats, cancellations, and account help.",
     booking_help:
         "To book a ticket, search from the home page by station or train number, choose your date and class, select a train, add passenger details, pick seats, review the journey, and complete payment.",
     train_search:
@@ -22,207 +32,592 @@ const staticCatalog = {
     seat_availability:
         "Seat and coach availability appears after you search trains and continue through the booking flow. Select your preferred class first so RailGo can show matching availability.",
     account_help:
-        "For account help, use the Login menu on the navbar. After signing in, open Profile to review your details or My Bookings to manage tickets linked to your account.",
+        "Use the Login menu on the navbar to sign in. After signing in, Profile shows your account details and My Bookings shows tickets linked to your account.",
     fallback:
-        "I can help with booking tickets, train search, PNR status, payments, cancellations, seats, and account questions. Please share what you are trying to do, and I will guide you step by step."
+        "I can help with booking tickets, train search, PNR status, payments, cancellations, seats, and account questions. Try asking: Find my latest booking, Check PNR 1234567890, or Payment status."
 };
 
 const requiresLoginReply =
-    "Please log in first — I can pull real PNR, booking, and payment details from your account once you're signed in. You can also use the PNR Status page in the navbar to check a ticket without logging in.";
+    "Please log in first. I can only show booking, PNR, and payment details after I can verify the account owner. If you only have a PNR, the PNR Status page can check it after captcha verification.";
 
-// ---------- formatting helpers ----------
+const escapeRegExp = (value) =>
+    String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const formatPassengerLine = (passenger) => {
-    const seat = passenger.seatNumber ? `seat ${passenger.seatNumber}` : "seat not yet allotted";
-    const cancelledTag = passenger.status === "CANCELLED" ? ", cancelled" : "";
-    return `${passenger.name} (${passenger.reservationStatus}, ${seat}${cancelledTag})`;
+const normalizePnr = (value) => String(value || "").replace(/\D/g, "");
+
+const humanize = (value, fallback = "Pending") => {
+    const text = String(value || fallback).replace(/_/g, " ").trim();
+    if (!text) return fallback;
+
+    return text
+        .toLowerCase()
+        .replace(/\b[a-z]/g, (match) => match.toUpperCase());
 };
 
-const formatBookingSummary = (booking) => {
-    const passengerLines = booking.passengers.map(formatPassengerLine).join("; ");
+const formatDate = (value) => {
+    if (!value) return "-";
 
-    const lines = [
-        `Train ${booking.trainNo}, ${booking.fromStation} to ${booking.toStation} on ${booking.journeyDate}, class ${booking.classCode}.`,
-        `Booking status: ${booking.bookingStatus}, reservation: ${booking.reservationStatus}${booking.bookingType !== "CONFIRMED" ? ` (${booking.bookingType})` : ""
-        }.`,
-        `Passengers: ${passengerLines}.`,
-        `Payment status: ${booking.paymentStatus}. Total fare: Rs. ${booking.totalFare}.`
-    ];
+    const [year, month, day] = String(value).split("-").map(Number);
+    if (!year || !month || !day) return String(value);
 
-    if (booking.pnrNumber) {
-        lines.unshift(`PNR: ${booking.pnrNumber}.`);
-    }
-
-    if (booking.cancellationStatus !== "ACTIVE") {
-        lines.push(`Cancellation: ${booking.cancellationStatus}.`);
-    }
-
-    return lines.join(" ");
+    return new Date(year, month - 1, day).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+    });
 };
 
-// ---------- DB lookup helpers ----------
+const formatDateTime = (value) => {
+    if (!value) return null;
 
-/**
- * Resolve a single booking for this user from whatever entity we have
- * (PNR > booking token > object id). If none of those were extracted from
- * the message, falls back to the user's most recent booking — this is what
- * makes "what's my booking status" work without the user typing an id.
- */
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+
+    return date.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+};
+
+const formatMoney = (value) => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return "Rs. 0";
+
+    return `Rs. ${amount.toLocaleString("en-IN")}`;
+};
+
+const getLifecycleStatus = (booking) => {
+    if (booking.bookingStatus) return booking.bookingStatus;
+    if (booking.status === "confirmed") return "completed";
+    if (booking.status === "seats_selected") return "seat_selected";
+    return booking.status || "pending";
+};
+
+const getDisplayStatus = (booking) => {
+    if (
+        booking.cancellationStatus === "FULLY_CANCELLED" ||
+        booking.status === "cancelled"
+    ) {
+        return "Cancelled";
+    }
+
+    if (booking.cancellationStatus === "PARTIAL_CANCELLED") {
+        return "Partially Cancelled";
+    }
+
+    return humanize(booking.reservationStatus || getLifecycleStatus(booking));
+};
+
+const getTrainName = (booking) => {
+    const train = booking.trainId || {};
+    return train.trainName || train.name || "";
+};
+
+const getTrainNumber = (booking) => {
+    const train = booking.trainId || {};
+    return booking.trainNo || train.trainNumber || "-";
+};
+
+const getSeatLabel = (passenger) => {
+    if (passenger.status === "CANCELLED" || passenger.reservationStatus === "CAN") {
+        return passenger.cancelledSeatNumber
+            ? `cancelled seat ${passenger.cancelledSeatNumber}`
+            : "cancelled";
+    }
+
+    return passenger.seatNumber
+        ? `seat ${passenger.seatNumber}`
+        : "seat not allotted";
+};
+
+const formatPassengerLine = (passenger, index) => {
+    const name = passenger.name || `Passenger ${index + 1}`;
+    const status = humanize(passenger.reservationStatus || passenger.status);
+    return `${name}: ${status}, ${getSeatLabel(passenger)}`;
+};
+
+const getActivePassengerCount = (booking) => {
+    if (!Array.isArray(booking.passengers)) return 0;
+
+    return booking.passengers.filter(
+        (passenger) =>
+            passenger.status !== "CANCELLED" &&
+            passenger.reservationStatus !== "CAN"
+    ).length;
+};
+
+const populateBooking = (query) => query.populate(BOOKING_POPULATE).lean();
+
+const findLatestPaymentForBooking = (booking) => {
+    if (!booking?._id && !booking?.bookingToken) return null;
+
+    return Payment.findOne({
+        $or: [
+            booking._id ? { bookingId: booking._id } : null,
+            booking.bookingToken ? { bookingToken: booking.bookingToken } : null
+        ].filter(Boolean)
+    })
+        .sort({ createdAt: -1 })
+        .lean();
+};
+
+const findLatestBookingForUser = ({ userId, withPnrOnly = false }) => {
+    const filter = { userId };
+
+    if (withPnrOnly) {
+        filter.pnrNumber = { $exists: true, $nin: [null, ""] };
+    }
+
+    return populateBooking(
+        Booking.findOne(filter).sort({ createdAt: -1 })
+    );
+};
+
 const findBookingForUser = async ({ userId, pnrNumber, bookingToken, objectId }) => {
     if (!userId) return null;
 
-    if (pnrNumber) {
-        return Booking.findOne({ userId, pnrNumber });
+    const normalizedPnr = normalizePnr(pnrNumber);
+
+    if (normalizedPnr) {
+        return populateBooking(Booking.findOne({ userId, pnrNumber: normalizedPnr }));
     }
 
     if (bookingToken) {
-        return Booking.findOne({ userId, bookingToken: new RegExp(`^${bookingToken}$`, "i") });
+        return populateBooking(
+            Booking.findOne({
+                userId,
+                bookingToken: new RegExp(`^${escapeRegExp(bookingToken)}$`, "i")
+            })
+        );
     }
 
     if (objectId && mongoose.Types.ObjectId.isValid(objectId)) {
-        return Booking.findOne({ userId, _id: objectId });
+        return populateBooking(Booking.findOne({ userId, _id: objectId }));
     }
 
-    return Booking.findOne({ userId }).sort({ createdAt: -1 });
+    return findLatestBookingForUser({ userId });
 };
 
-// ---------- intent handlers ----------
-// Each handler returns { reply, booking } so the caller can build follow-up
-// context (e.g. "cancel it" referring to the booking just looked up)
-// without re-querying the database a second time.
+const findPaymentByTransactionForUser = async ({ userId, transactionId }) => {
+    if (!userId || !transactionId) return { booking: null, payment: null };
+
+    const payment = await Payment.findOne({
+        transactionId: new RegExp(`^${escapeRegExp(transactionId)}$`, "i")
+    })
+        .sort({ createdAt: -1 })
+        .lean();
+
+    if (!payment) return { booking: null, payment: null };
+
+    const booking = await populateBooking(
+        Booking.findOne({ userId, _id: payment.bookingId })
+    );
+
+    if (!booking) return { booking: null, payment: null };
+
+    return { booking, payment };
+};
+
+const toChatBooking = (booking) => {
+    if (!booking) return null;
+
+    return {
+        id: booking._id?.toString(),
+        bookingToken: booking.bookingToken,
+        pnrNumber: booking.pnrNumber || null,
+        status: {
+            display: getDisplayStatus(booking),
+            booking: humanize(getLifecycleStatus(booking)),
+            reservation: booking.reservationStatus || null,
+            payment: humanize(booking.paymentStatus),
+            cancellation: humanize(booking.cancellationStatus || "ACTIVE")
+        },
+        train: {
+            number: getTrainNumber(booking),
+            name: getTrainName(booking) || null
+        },
+        journey: {
+            fromStation: booking.fromStation,
+            toStation: booking.toStation,
+            journeyDate: booking.journeyDate,
+            classCode: booking.classCode
+        },
+        fare: {
+            amount: booking.totalFare,
+            currency: "INR"
+        },
+        passengers: Array.isArray(booking.passengers)
+            ? booking.passengers.map((passenger, index) => ({
+                number: index + 1,
+                name: passenger.name,
+                seatNumber: passenger.seatNumber || null,
+                cancelledSeatNumber: passenger.cancelledSeatNumber || null,
+                reservationStatus: passenger.reservationStatus || null,
+                status: passenger.status || null
+            }))
+            : [],
+        timeline: {
+            bookedAt: booking.createdAt || null,
+            paidAt: booking.paidAt || null,
+            ticketGeneratedAt: booking.ticketGeneratedAt || null,
+            cancelledAt: booking.cancelledAt || null
+        }
+    };
+};
+
+const toChatPayment = (payment) => {
+    if (!payment) return null;
+
+    return {
+        id: payment._id?.toString(),
+        transactionId: payment.transactionId,
+        bookingToken: payment.bookingToken,
+        status: payment.status,
+        method: payment.paymentMethod,
+        amount: payment.amount,
+        currency: payment.currency || "INR",
+        failureReason: payment.failureReason || null,
+        paidAt: payment.paidAt || null,
+        failedAt: payment.failedAt || null,
+        refundedAt: payment.refundedAt || null,
+        createdAt: payment.createdAt || null
+    };
+};
+
+const buildBookingReply = (booking, { heading = "I found your booking.", payment = null } = {}) => {
+    const trainName = getTrainName(booking);
+    const passengerCount = Array.isArray(booking.passengers) ? booking.passengers.length : 0;
+    const activePassengerCount = getActivePassengerCount(booking);
+    const passengerLines = Array.isArray(booking.passengers)
+        ? booking.passengers.slice(0, 4).map(formatPassengerLine)
+        : [];
+
+    if (passengerCount > passengerLines.length) {
+        passengerLines.push(`${passengerCount - passengerLines.length} more passenger(s) in this booking`);
+    }
+
+    const lines = [
+        heading,
+        `PNR: ${booking.pnrNumber || "Not generated yet"}`,
+        `Booking ref: ${booking.bookingToken}`,
+        `Train: ${getTrainNumber(booking)}${trainName ? ` - ${trainName}` : ""}`,
+        `Route: ${booking.fromStation} to ${booking.toStation} on ${formatDate(booking.journeyDate)}, class ${booking.classCode}`,
+        `Status: ${getDisplayStatus(booking)} | Booking: ${humanize(getLifecycleStatus(booking))} | Payment: ${humanize(booking.paymentStatus)}`,
+        `Passengers: ${activePassengerCount}/${passengerCount} active${passengerLines.length ? ` - ${passengerLines.join("; ")}` : ""}`,
+        `Fare: ${formatMoney(booking.totalFare)}`
+    ];
+
+    if (!booking.pnrNumber && booking.paymentStatus !== "paid") {
+        lines.push("PNR is generated after successful payment.");
+    }
+
+    if (booking.cancellationStatus && booking.cancellationStatus !== "ACTIVE") {
+        lines.push(`Cancellation: ${humanize(booking.cancellationStatus)}`);
+    }
+
+    if (payment?.transactionId) {
+        lines.push(`Latest transaction: ${payment.transactionId} (${humanize(payment.status)})`);
+    }
+
+    return lines.join("\n");
+};
+
+const buildPaymentReply = (booking, payment) => {
+    if (!payment) {
+        return [
+            "I found the booking, but no payment transaction is recorded yet.",
+            `Booking ref: ${booking.bookingToken}`,
+            `PNR: ${booking.pnrNumber || "Not generated yet"}`,
+            `Booking payment status: ${humanize(booking.paymentStatus)}`,
+            `Fare: ${formatMoney(booking.totalFare)}`
+        ].join("\n");
+    }
+
+    const lines = [
+        "I found your payment details.",
+        `Transaction: ${payment.transactionId}`,
+        `Payment status: ${humanize(payment.status)} | Booking payment: ${humanize(booking.paymentStatus)}`,
+        `Amount: ${formatMoney(payment.amount)} via ${payment.paymentMethod}`,
+        `Booking ref: ${booking.bookingToken}`,
+        `PNR: ${booking.pnrNumber || "Not generated yet"}`,
+        `Journey: ${booking.fromStation} to ${booking.toStation} on ${formatDate(booking.journeyDate)}`
+    ];
+
+    const paidAt = formatDateTime(payment.paidAt);
+    const failedAt = formatDateTime(payment.failedAt);
+    const refundedAt = formatDateTime(payment.refundedAt);
+
+    if (paidAt) lines.push(`Paid at: ${paidAt}`);
+    if (failedAt) lines.push(`Failed at: ${failedAt}`);
+    if (refundedAt) lines.push(`Refunded at: ${refundedAt}`);
+    if (payment.status === "FAILED" && payment.failureReason) {
+        lines.push(`Reason: ${payment.failureReason}`);
+    }
+
+    return lines.join("\n");
+};
+
+const buildContext = (booking, payment = null) => {
+    if (!booking && !payment) return {};
+
+    return {
+        lastBookingId: booking?._id ? String(booking._id) : null,
+        lastPnr: booking?.pnrNumber || null,
+        lastBookingToken: booking?.bookingToken || payment?.bookingToken || null,
+        lastTransactionId: payment?.transactionId || null
+    };
+};
+
+const responsePayload = ({
+    reply,
+    intent,
+    booking = null,
+    payment = null,
+    suggestions = defaultSuggestions,
+    authenticated = false,
+    authRequired = false
+}) => ({
+    reply,
+    intent,
+    mode: "live",
+    source: "railgo-chatbot",
+    authenticated,
+    authRequired,
+    context: buildContext(booking, payment),
+    result: booking || payment
+        ? {
+            type: payment ? "payment" : "booking",
+            booking: toChatBooking(booking),
+            payment: toChatPayment(payment)
+        }
+        : null,
+    suggestions
+});
+
+const getContextEntities = (context) => ({
+    pnrNumber: context?.lastPnr || null,
+    bookingToken: context?.lastBookingToken || null,
+    objectId: context?.lastBookingId || null,
+    transactionId: context?.lastTransactionId || null
+});
+
+const hasBookingEntity = (entities) =>
+    Boolean(entities.pnrNumber || entities.bookingToken || entities.objectId);
 
 const handlePnrStatus = async ({ userId, entities }) => {
-    if (!userId) return { reply: requiresLoginReply, booking: null };
-
-    if (!entities.pnrNumber) {
+    if (!userId) {
         return {
-            reply: "Please share your 10-digit PNR number and I will look up the journey, passenger, and status details.",
-            booking: null
+            reply: requiresLoginReply,
+            authRequired: true,
+            suggestions: ["Login", "Open PNR Status", "How do I book a ticket?"]
         };
     }
 
-    const booking = await Booking.findOne({ userId, pnrNumber: entities.pnrNumber });
+    const normalizedPnr = normalizePnr(entities.pnrNumber);
+
+    if (entities.pnrNumber && !/^\d{10}$/.test(normalizedPnr)) {
+        return {
+            reply: "Please share a valid 10-digit PNR number.",
+            suggestions: ["Check my PNR status", "Find my latest booking"]
+        };
+    }
+
+    const booking = normalizedPnr
+        ? await findBookingForUser({ userId, pnrNumber: normalizedPnr })
+        : await findLatestBookingForUser({ userId, withPnrOnly: true });
 
     if (!booking) {
+        const latestBooking = await findLatestBookingForUser({ userId });
+
+        if (latestBooking) {
+            const payment = await findLatestPaymentForBooking(latestBooking);
+            return {
+                reply: buildBookingReply(latestBooking, {
+                    heading: normalizedPnr
+                        ? `I could not find PNR ${normalizedPnr} on your account. Here is your latest booking instead.`
+                        : "I could not find a generated PNR yet. Here is your latest booking.",
+                    payment
+                }),
+                booking: latestBooking,
+                payment,
+                suggestions: ["Payment status", "Find my latest booking", "Open My Bookings"]
+            };
+        }
+
         return {
-            reply: `I couldn't find a booking with PNR ${entities.pnrNumber} on your account. Please double-check the number, or use PNR Status in the navbar.`,
-            booking: null
+            reply: normalizedPnr
+                ? `I could not find PNR ${normalizedPnr} on your account. Please double-check the number or use the PNR Status page.`
+                : "I could not find any bookings with a generated PNR on your account yet.",
+            suggestions: ["Find my latest booking", "How do I book a ticket?"]
         };
     }
 
-    return { reply: formatBookingSummary(booking), booking };
+    const payment = await findLatestPaymentForBooking(booking);
+
+    return {
+        reply: buildBookingReply(booking, { heading: "Here is your PNR status.", payment }),
+        booking,
+        payment,
+        suggestions: ["Payment status", "Cancel booking", "Find my latest booking"]
+    };
 };
 
-const handleBookingStatus = async ({ userId, entities }) => {
-    if (!userId) return { reply: requiresLoginReply, booking: null };
+const shouldUseContextForBooking = (message) =>
+    /\b(it|this|that|same booking|same ticket)\b/i.test(message || "");
 
-    const booking = await findBookingForUser({ userId, ...entities });
-
-    if (!booking) {
+const handleBookingStatus = async ({ userId, entities, context, message }) => {
+    if (!userId) {
         return {
-            reply: "I couldn't find that booking on your account yet. If you just paid, this can take a minute to update.",
-            booking: null
+            reply: requiresLoginReply,
+            authRequired: true,
+            suggestions: ["Login", "How do I book a ticket?", "Open PNR Status"]
         };
     }
 
-    return { reply: formatBookingSummary(booking), booking };
-};
-
-const handlePaymentStatus = async ({ userId, entities }) => {
-    if (!userId) return { reply: requiresLoginReply, booking: null };
-
-    const booking = await findBookingForUser({ userId, ...entities });
-
-    if (!booking) {
-        return {
-            reply: "I couldn't find a matching booking to check payment for. Please share the PNR or booking reference.",
-            booking: null
-        };
-    }
-
-    const payment = await Payment.findOne({ bookingId: booking._id }).sort({ createdAt: -1 });
-
-    if (!payment) {
-        return {
-            reply: `This booking's payment status is "${booking.paymentStatus}". No payment attempt record was found yet.`,
-            booking
-        };
-    }
-
-    const parts = [`Payment status: ${payment.status}, amount Rs. ${payment.amount} via ${payment.paymentMethod}.`];
-
-    if (payment.status === "FAILED" && payment.failureReason) {
-        parts.push(`Reason: ${payment.failureReason}. You can retry payment from the booking flow.`);
-    }
-    if (payment.status === "SUCCESS" && payment.paidAt) {
-        parts.push(`Paid on ${new Date(payment.paidAt).toLocaleString("en-IN")}.`);
-    }
-    if (payment.status === "REFUNDED" && payment.refundedAt) {
-        parts.push(`Refunded on ${new Date(payment.refundedAt).toLocaleString("en-IN")}.`);
-    }
-
-    return { reply: parts.join(" "), booking };
-};
-
-const handleCancelBooking = async ({ userId, entities, context }) => {
-    if (!userId) return { reply: requiresLoginReply, booking: null };
-
-    const hasExplicitEntity = entities.pnrNumber || entities.bookingToken || entities.objectId;
-
-    // "cancel it" right after a PNR/booking lookup: resolve the pronoun using
-    // the context the frontend sent back from the previous response.
-    const lookupEntities = hasExplicitEntity
+    const lookupEntities = hasBookingEntity(entities)
         ? entities
-        : {
-            pnrNumber: context?.lastPnr || null,
-            bookingToken: context?.lastBookingToken || null,
-            objectId: context?.lastBookingId || null
-        };
+        : shouldUseContextForBooking(message)
+            ? getContextEntities(context)
+            : {};
 
     const booking = await findBookingForUser({ userId, ...lookupEntities });
 
     if (!booking) {
         return {
-            reply:
-                "Please share the PNR, or open My Bookings, select the ticket, and use the Cancel option there. I can confirm the cancellation status right after.",
-            booking: null
+            reply: hasBookingEntity(lookupEntities)
+                ? "I could not find that booking on your account. Please check the PNR or booking reference."
+                : "I could not find any bookings on your account yet.",
+            suggestions: ["Find my latest booking", "Check my PNR status", "How do I book a ticket?"]
         };
     }
+
+    const payment = await findLatestPaymentForBooking(booking);
+
+    return {
+        reply: buildBookingReply(booking, { heading: "I found your booking.", payment }),
+        booking,
+        payment,
+        suggestions: ["Payment status", "Check my PNR status", "Cancel booking"]
+    };
+};
+
+const handlePaymentStatus = async ({ userId, entities, context }) => {
+    if (!userId) {
+        return {
+            reply: requiresLoginReply,
+            authRequired: true,
+            suggestions: ["Login", "Open PNR Status", "How do I book a ticket?"]
+        };
+    }
+
+    const lookupEntities = {
+        ...getContextEntities(context),
+        ...Object.fromEntries(
+            Object.entries(entities).filter(([, value]) => Boolean(value))
+        )
+    };
+
+    if (lookupEntities.transactionId) {
+        const result = await findPaymentByTransactionForUser({
+            userId,
+            transactionId: lookupEntities.transactionId
+        });
+
+        if (result.payment && result.booking) {
+            return {
+                reply: buildPaymentReply(result.booking, result.payment),
+                booking: result.booking,
+                payment: result.payment,
+                suggestions: ["Find my latest booking", "Check my PNR status", "Cancel booking"]
+            };
+        }
+    }
+
+    const booking = await findBookingForUser({ userId, ...lookupEntities });
+
+    if (!booking) {
+        return {
+            reply: lookupEntities.transactionId
+                ? `I could not find transaction ${lookupEntities.transactionId} on your account.`
+                : "I could not find a booking to check payment for. Please share a PNR, booking reference, or transaction ID.",
+            suggestions: ["Find my latest booking", "Check my PNR status"]
+        };
+    }
+
+    const payment = await findLatestPaymentForBooking(booking);
+
+    return {
+        reply: buildPaymentReply(booking, payment),
+        booking,
+        payment,
+        suggestions: ["Find my latest booking", "Check my PNR status", "Cancel booking"]
+    };
+};
+
+const handleCancelBooking = async ({ userId, entities, context }) => {
+    if (!userId) {
+        return {
+            reply: requiresLoginReply,
+            authRequired: true,
+            suggestions: ["Login", "How do I book a ticket?"]
+        };
+    }
+
+    const lookupEntities = hasBookingEntity(entities)
+        ? entities
+        : getContextEntities(context);
+
+    const booking = await findBookingForUser({ userId, ...lookupEntities });
+
+    if (!booking) {
+        return {
+            reply: "Please share the PNR or booking reference. You can also open My Bookings and select the ticket you want to cancel.",
+            suggestions: ["Find my latest booking", "Check my PNR status"]
+        };
+    }
+
+    const payment = await findLatestPaymentForBooking(booking);
 
     if (booking.cancellationStatus === "FULLY_CANCELLED") {
         return {
-            reply: `This booking (PNR ${booking.pnrNumber || "not yet generated"}) is already fully cancelled.`,
-            booking
+            reply: buildBookingReply(booking, {
+                heading: "This booking is already fully cancelled.",
+                payment
+            }),
+            booking,
+            payment,
+            suggestions: ["Find my latest booking", "Payment status"]
         };
     }
 
     return {
-        reply: `Found it — train ${booking.trainNo} on ${booking.journeyDate}, current status: ${booking.cancellationStatus}. For safety, I can't cancel it directly from chat; open My Bookings and select Cancel on this ticket, and I can confirm the update once it's done.`,
-        booking
+        reply: [
+            buildBookingReply(booking, {
+                heading: "I found the booking you want to cancel.",
+                payment
+            }),
+            "For safety, cancellation is completed from My Bookings. Open this ticket there and choose Cancel."
+        ].join("\n"),
+        booking,
+        payment,
+        suggestions: ["Find my latest booking", "Payment status", "Check my PNR status"]
     };
 };
-
-// ---------- follow-up context ----------
-
-const buildContext = (booking) => {
-    if (!booking) return {};
-
-    return {
-        lastBookingId: String(booking._id),
-        lastPnr: booking.pnrNumber || null,
-        lastBookingToken: booking.bookingToken || null
-    };
-};
-
-// ---------- route handlers ----------
 
 exports.sendMessage = async (req, res) => {
     try {
         const message = String(req.body?.message || "").trim();
-        const context = req.body?.context && typeof req.body.context === "object" ? req.body.context : {};
+        const context = req.body?.context && typeof req.body.context === "object"
+            ? req.body.context
+            : {};
 
         if (message.length < MIN_MESSAGE_LENGTH) {
-            return res.status(400).json({ message: "Please enter a message for the assistant." });
+            return res.status(400).json({
+                message: "Please enter a message for the assistant."
+            });
         }
 
         if (message.length > MAX_MESSAGE_LENGTH) {
@@ -232,61 +627,68 @@ exports.sendMessage = async (req, res) => {
         }
 
         const userId = req.user?.id || null;
-        const intent = detectIntent(message);
         const entities = extractEntities(message);
+        let intent = detectIntent(message);
 
-        let reply;
-        let booking = null;
-
-        if (DATA_INTENTS.includes(intent)) {
-            let result;
-
-            switch (intent) {
-                case "pnr_status":
-                    result = await handlePnrStatus({ userId, entities });
-                    break;
-                case "booking_status":
-                    result = await handleBookingStatus({ userId, entities });
-                    break;
-                case "payment_status":
-                    result = await handlePaymentStatus({ userId, entities });
-                    break;
-                case "cancel_booking":
-                    result = await handleCancelBooking({ userId, entities, context });
-                    break;
-                default:
-                    result = { reply: staticCatalog.fallback, booking: null };
-            }
-
-            reply = result.reply;
-            booking = result.booking;
-        } else {
-            reply = staticCatalog[intent] || staticCatalog.fallback;
+        if (intent === "fallback") {
+            if (entities.transactionId) intent = "payment_status";
+            else if (entities.pnrNumber) intent = "pnr_status";
+            else if (entities.bookingToken || entities.objectId) intent = "booking_status";
         }
 
-        return res.status(200).json({
-            reply,
-            intent,
-            mode: "live",
-            source: "railgo-chatbot",
-            context: buildContext(booking),
-            suggestions: [
-                "Check my PNR status",
-                "Latest booking status",
-                "Payment failed",
-                "Cancel booking"
-            ]
-        });
+        if (!DATA_INTENTS.includes(intent)) {
+            return res.status(200).json(
+                responsePayload({
+                    reply: staticCatalog[intent] || staticCatalog.fallback,
+                    intent,
+                    authenticated: Boolean(userId),
+                    suggestions: defaultSuggestions
+                })
+            );
+        }
+
+        let result;
+
+        switch (intent) {
+            case "pnr_status":
+                result = await handlePnrStatus({ userId, entities, context });
+                break;
+            case "booking_status":
+                result = await handleBookingStatus({ userId, entities, context, message });
+                break;
+            case "payment_status":
+                result = await handlePaymentStatus({ userId, entities, context });
+                break;
+            case "cancel_booking":
+                result = await handleCancelBooking({ userId, entities, context });
+                break;
+            default:
+                result = { reply: staticCatalog.fallback };
+        }
+
+        return res.status(200).json(
+            responsePayload({
+                intent,
+                authenticated: Boolean(userId),
+                ...result
+            })
+        );
     } catch (error) {
         console.error("Chatbot error:", error);
 
         return res.status(500).json({
             reply: "Something went wrong while checking that. Please try again in a moment, or use My Bookings / PNR Status directly.",
-            mode: "error"
+            mode: "error",
+            source: "railgo-chatbot",
+            suggestions: defaultSuggestions
         });
     }
 };
 
 exports.healthCheck = (req, res) => {
-    return res.status(200).json({ status: "ok", service: "railgo-chatbot", mode: "live" });
+    return res.status(200).json({
+        status: "ok",
+        service: "railgo-chatbot",
+        mode: "live"
+    });
 };

@@ -51,3 +51,4 @@ To ignore, add // eslint-disable-next-line to the line before.
 [1mCritical dependency: the request of a dependency is an expression[39m[22m
 
 webpack compiled with [1m[33m1 warning[39m[22m
+Compiling...

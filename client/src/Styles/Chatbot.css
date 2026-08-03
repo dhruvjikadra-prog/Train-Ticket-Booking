@@ -225,6 +225,7 @@
     color: #23384f;
     font-size: 13px;
     line-height: 1.55;
+    white-space: pre-line;
     overflow-wrap: anywhere;
     box-shadow: 0 10px 24px rgba(30, 72, 112, .09);
 }
