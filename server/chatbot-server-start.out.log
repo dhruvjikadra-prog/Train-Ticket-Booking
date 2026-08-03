@@ -1,0 +1,7 @@
+
+> server@1.0.0 start
+> node server.js
+
+◇ injected env (7) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+Server Running on Port 5000
+Database Connected Successfully

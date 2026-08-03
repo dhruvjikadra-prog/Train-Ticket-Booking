@@ -6,6 +6,7 @@ import Features from '../Components/Features';
 import Footer from '../Components/Footer';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import PopularDestinations from '../Components/PopularDestinations';
+import Chatbot from '../Components/Chatbot';
 // import TrainLoader from '../Components/TrainLoader';
 
 export default function Home() {
@@ -33,6 +34,7 @@ export default function Home() {
         <PopularDestinations />
         <Features />
         <Footer />
+        <Chatbot />
     </>
   )
 }

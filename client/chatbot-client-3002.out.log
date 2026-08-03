@@ -1,0 +1,17 @@
+
+> client@0.1.0 start
+> react-scripts start
+
+Starting the development server...
+
+Compiled with warnings.
+
+Critical dependency: the request of a dependency is an expression
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/react-datepicker/dist/index.es.js[39m[22m [1m[32m150:16-44[39m[22m
+[1mCritical dependency: the request of a dependency is an expression[39m[22m
+
+webpack compiled with [1m[33m1 warning[39m[22m
