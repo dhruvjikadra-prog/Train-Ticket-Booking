@@ -50,6 +50,8 @@ const buildFallbackReply = (message) => {
     return "I can help with train search, booking, PNR status, payments, cancellations, and account issues. Tell me what you are trying to do and I will guide you step by step.";
 };
 
+const isDetailedReply = (text) => typeof text === "string" && text.includes("\n");
+
 function Chatbot() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
@@ -61,6 +63,12 @@ function Chatbot() {
     const [quickPrompts, setQuickPrompts] = useState(defaultQuickPrompts);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+    const MAX_CHARS = 200;
+    const remaining = MAX_CHARS - input.length;
+
+    const counterColor = remaining <= 20 ? "#dc3545" : remaining <= 50 ? "#fd7e14" : "#0d6efd";
+
+    const progress = (input.length / MAX_CHARS) * 100;
 
     const canSend = input.trim().length > 0 && !isSending;
 
@@ -157,8 +165,7 @@ function Chatbot() {
             const assistantMessage = {
                 id: `assistant-${Date.now()}`,
                 role: "assistant",
-                text: response.data?.reply || buildFallbackReply(trimmedMessage),
-                result: response.data?.result || null
+                text: response.data?.reply || buildFallbackReply(trimmedMessage)
             };
 
             setMessages((current) => [...current, assistantMessage]);
@@ -171,8 +178,7 @@ function Chatbot() {
             const fallbackMessage = {
                 id: `assistant-${Date.now()}`,
                 role: "assistant",
-                text: serverReply || buildFallbackReply(trimmedMessage),
-                result: error.response?.data?.result || null
+                text: serverReply || buildFallbackReply(trimmedMessage)
             };
 
             setMessages((current) => [...current, fallbackMessage]);
@@ -263,7 +269,10 @@ function Chatbot() {
                                                 )}
                                             </div>
 
-                                            <div className="chatbot-message-bubble">
+                                            <div
+                                                className={`chatbot-message-bubble${isDetailedReply(message.text) ? " chatbot-detailed" : ""
+                                                    }`}
+                                            >
                                                 {message.text}
                                             </div>
                                         </div>
@@ -305,11 +314,37 @@ function Chatbot() {
                                     ref={inputRef}
                                     type="text"
                                     value={input}
-                                    maxLength={300}
+                                    maxLength={MAX_CHARS}
                                     placeholder="Type your question..."
                                     aria-label="Type your question"
                                     onChange={(event) => setInput(event.target.value)}
                                 />
+
+                                <div className="chatbot-char-counter">
+                                    <svg width="38" height="38">
+                                        <circle
+                                            className="counter-bg"
+                                            cx="19"
+                                            cy="19"
+                                            r="16"
+                                        />
+
+                                        <circle
+                                            className="counter-progress"
+                                            cx="19"
+                                            cy="19"
+                                            r="16"
+                                            style={{
+                                                stroke: counterColor,
+                                                strokeDashoffset: 100 - progress
+                                            }}
+                                        />
+                                    </svg>
+
+                                    <span style={{ color: counterColor }} title={`${remaining} characters remaining`}>
+                                        {remaining}
+                                    </span>
+                                </div>
 
                                 <button
                                     type="submit"
@@ -328,7 +363,7 @@ function Chatbot() {
 
             <button
                 type="button"
-                className="chatbot-launcher"
+                className={`chatbot-launcher${isOpen ? " is-open" : ""}`}
                 aria-label={isOpen ? "Close RailGo Assistant" : "Open RailGo Assistant"}
                 aria-expanded={isOpen}
                 onClick={() => {
@@ -336,8 +371,11 @@ function Chatbot() {
                     setIsMinimized(false);
                 }}
             >
-                {isOpen ? <X size={24} /> : <MessageCircle size={27} />}
-                {!isOpen && <span>AI Help</span>}
+                <span className="chatbot-launcher-icon-stack">
+                    <MessageCircle size={27} className="chatbot-launcher-icon icon-chat" />
+                    <X size={24} className="chatbot-launcher-icon icon-close" />
+                </span>
+                <span className="chatbot-launcher-label">AI Help</span>
             </button>
         </div>
     );
