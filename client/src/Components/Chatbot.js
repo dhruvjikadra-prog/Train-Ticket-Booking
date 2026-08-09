@@ -4,6 +4,7 @@ import {
     Bot,
     ChevronDown,
     MessageCircle,
+    Move,
     RefreshCw,
     Send,
     Sparkles,
@@ -52,6 +53,138 @@ const buildFallbackReply = (message) => {
 
 const isDetailedReply = (text) => typeof text === "string" && text.includes("\n");
 
+const DRAG_EDGE_GAP = 12;
+const DRAG_THRESHOLD = 5;
+const POSITION_STORAGE_KEY = "railgo-chatbot-position";
+
+const clampPosition = (x, y, width, height) => {
+    if (typeof window === "undefined") {
+        return { x, y };
+    }
+
+    const maxX = Math.max(DRAG_EDGE_GAP, window.innerWidth - width - DRAG_EDGE_GAP);
+    const maxY = Math.max(DRAG_EDGE_GAP, window.innerHeight - height - DRAG_EDGE_GAP);
+
+    return {
+        x: Math.min(Math.max(DRAG_EDGE_GAP, x), maxX),
+        y: Math.min(Math.max(DRAG_EDGE_GAP, y), maxY)
+    };
+};
+
+const readStoredPosition = () => {
+    if (typeof window === "undefined") return null;
+
+    try {
+        const savedPosition = JSON.parse(window.localStorage.getItem(POSITION_STORAGE_KEY) || "null");
+
+        if (
+            savedPosition &&
+            Number.isFinite(savedPosition.x) &&
+            Number.isFinite(savedPosition.y)
+        ) {
+            return savedPosition;
+        }
+    } catch {
+        // Ignore invalid saved positions and fall back to the default corner.
+    }
+
+    return null;
+};
+
+const getDetailTone = (value) => {
+    const normalized = String(value || "").toLowerCase();
+
+    if (/(cancel|failed|failure|not found|could not|invalid|error)/.test(normalized)) {
+        return "danger";
+    }
+
+    if (/(pending|wait|not generated|processing|selected)/.test(normalized)) {
+        return "warning";
+    }
+
+    if (/(paid|confirmed|active|success|completed|generated|online)/.test(normalized)) {
+        return "success";
+    }
+
+    return "info";
+};
+
+const shouldUseCodeStyle = (label) =>
+    /pnr|ref|reference|transaction|token/i.test(label || "");
+
+const renderDetailValue = (label, value) => {
+    const detailParts = String(value || "")
+        .split("|")
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+    if (detailParts.length > 1) {
+        return (
+            <span className="chatbot-detail-chips">
+                {detailParts.map((part) => (
+                    <span
+                        key={part}
+                        className={`chatbot-detail-chip tone-${getDetailTone(part)}`}
+                    >
+                        {part}
+                    </span>
+                ))}
+            </span>
+        );
+    }
+
+    return (
+        <span className={shouldUseCodeStyle(label) ? "chatbot-detail-code" : undefined}>
+            {value}
+        </span>
+    );
+};
+
+const renderMessageContent = (text) => {
+    if (!isDetailedReply(text)) return text;
+
+    const lines = String(text)
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    const [title, ...details] = lines;
+
+    return (
+        <div className="chatbot-detail-card">
+            <div className={`chatbot-detail-title tone-${getDetailTone(text)}`}>
+                {title}
+            </div>
+
+            <div className="chatbot-detail-list">
+                {details.map((line, index) => {
+                    const separatorIndex = line.indexOf(":");
+
+                    if (separatorIndex <= 0) {
+                        return (
+                            <div key={`${line}-${index}`} className="chatbot-detail-note">
+                                {line}
+                            </div>
+                        );
+                    }
+
+                    const label = line.slice(0, separatorIndex).trim();
+                    const value = line.slice(separatorIndex + 1).trim();
+
+                    return (
+                        <div key={`${label}-${index}`} className="chatbot-detail-row">
+                            <span className="chatbot-detail-label">{label}</span>
+                            <span className="chatbot-detail-value">
+                                {renderDetailValue(label, value)}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 function Chatbot() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
@@ -61,8 +194,13 @@ function Chatbot() {
     const [serverOnline, setServerOnline] = useState(null);
     const [conversationContext, setConversationContext] = useState({});
     const [quickPrompts, setQuickPrompts] = useState(defaultQuickPrompts);
+    const [position, setPosition] = useState(readStoredPosition);
+    const [isDragging, setIsDragging] = useState(false);
+    const shellRef = useRef(null);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+    const dragStateRef = useRef(null);
+    const suppressClickRef = useRef(false);
     const MAX_CHARS = 200;
     const remaining = MAX_CHARS - input.length;
 
@@ -93,6 +231,115 @@ function Chatbot() {
 
         return () => window.clearTimeout(focusTimer);
     }, [isOpen, isMinimized]);
+
+    useEffect(() => {
+        if (!position) return;
+
+        window.localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(position));
+    }, [position]);
+
+    useEffect(() => {
+        if (!isOpen || !position) return;
+
+        const keepChatInView = () => {
+            const rect = shellRef.current?.getBoundingClientRect();
+
+            if (!rect) return;
+
+            setPosition((current) => {
+                if (!current) return current;
+
+                const nextPosition = clampPosition(current.x, current.y, rect.width, rect.height);
+
+                return nextPosition.x === current.x && nextPosition.y === current.y
+                    ? current
+                    : nextPosition;
+            });
+        };
+
+        const frameId = window.requestAnimationFrame(keepChatInView);
+        window.addEventListener("resize", keepChatInView);
+
+        return () => {
+            window.cancelAnimationFrame(frameId);
+            window.removeEventListener("resize", keepChatInView);
+        };
+    }, [isOpen, isMinimized, position]);
+
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const handlePointerMove = (event) => {
+            const dragState = dragStateRef.current;
+
+            if (!dragState) return;
+
+            const distanceX = Math.abs(event.clientX - dragState.startX);
+            const distanceY = Math.abs(event.clientY - dragState.startY);
+
+            if (distanceX > DRAG_THRESHOLD || distanceY > DRAG_THRESHOLD) {
+                dragState.didDrag = true;
+                suppressClickRef.current = true;
+            }
+
+            const nextPosition = clampPosition(
+                event.clientX - dragState.offsetX,
+                event.clientY - dragState.offsetY,
+                dragState.width,
+                dragState.height
+            );
+
+            setPosition(nextPosition);
+        };
+
+        const endDrag = () => {
+            const dragState = dragStateRef.current;
+
+            if (dragState?.didDrag) {
+                window.setTimeout(() => {
+                    suppressClickRef.current = false;
+                }, 0);
+            } else {
+                suppressClickRef.current = false;
+            }
+
+            dragStateRef.current = null;
+            setIsDragging(false);
+        };
+
+        window.addEventListener("pointermove", handlePointerMove);
+        window.addEventListener("pointerup", endDrag);
+        window.addEventListener("pointercancel", endDrag);
+
+        return () => {
+            window.removeEventListener("pointermove", handlePointerMove);
+            window.removeEventListener("pointerup", endDrag);
+            window.removeEventListener("pointercancel", endDrag);
+        };
+    }, [isDragging]);
+
+    const startDrag = (event) => {
+        if (!isOpen) return;
+        if (event.button !== undefined && event.button !== 0) return;
+        if (event.target.closest(".chatbot-icon-btn")) return;
+
+        const rect = shellRef.current?.getBoundingClientRect();
+
+        if (!rect) return;
+
+        dragStateRef.current = {
+            startX: event.clientX,
+            startY: event.clientY,
+            offsetX: event.clientX - rect.left,
+            offsetY: event.clientY - rect.top,
+            width: rect.width,
+            height: rect.height,
+            didDrag: false
+        };
+
+        setPosition(clampPosition(rect.left, rect.top, rect.width, rect.height));
+        setIsDragging(true);
+    };
 
     const resetChat = () => {
         setMessages(initialMessages);
@@ -165,7 +412,9 @@ function Chatbot() {
             const assistantMessage = {
                 id: `assistant-${Date.now()}`,
                 role: "assistant",
-                text: response.data?.reply || buildFallbackReply(trimmedMessage)
+                text: response.data?.reply || buildFallbackReply(trimmedMessage),
+                intent: response.data?.intent || null,
+                result: response.data?.result || null
             };
 
             setMessages((current) => [...current, assistantMessage]);
@@ -192,14 +441,35 @@ function Chatbot() {
         sendMessage();
     };
 
+    const handleLauncherClick = (event) => {
+        if (suppressClickRef.current) {
+            event.preventDefault();
+            return;
+        }
+
+        setIsOpen((current) => !current);
+        setIsMinimized(false);
+    };
+
     return (
-        <div className={`chatbot-shell ${isOpen ? "is-open" : ""}`}>
+        <div
+            ref={shellRef}
+            className={`chatbot-shell ${isOpen ? "is-open" : ""} ${isOpen && position ? "is-positioned" : ""} ${isDragging ? "is-dragging" : ""}`}
+            style={
+                isOpen && position
+                    ? {
+                        "--chatbot-left": `${position.x}px`,
+                        "--chatbot-top": `${position.y}px`
+                    }
+                    : undefined
+            }
+        >
             {isOpen && (
                 <section
                     className={`chatbot-panel ${isMinimized ? "is-minimized" : ""}`}
                     aria-label="RailGo Assistant"
                 >
-                    <div className="chatbot-header">
+                    <div className="chatbot-header" onPointerDown={startDrag}>
                         <div className="chatbot-title-area">
                             <div className="chatbot-avatar">
                                 <Bot size={22} strokeWidth={2.2} />
@@ -212,6 +482,10 @@ function Chatbot() {
                         </div>
 
                         <div className="chatbot-header-actions">
+                            <span className="chatbot-drag-handle" title="Move chat" aria-hidden="true">
+                                <Move size={16} />
+                            </span>
+
                             <button
                                 type="button"
                                 className="chatbot-icon-btn"
@@ -273,7 +547,7 @@ function Chatbot() {
                                                 className={`chatbot-message-bubble${isDetailedReply(message.text) ? " chatbot-detailed" : ""
                                                     }`}
                                             >
-                                                {message.text}
+                                                {renderMessageContent(message.text)}
                                             </div>
                                         </div>
                                     ))}
@@ -366,10 +640,7 @@ function Chatbot() {
                 className={`chatbot-launcher${isOpen ? " is-open" : ""}`}
                 aria-label={isOpen ? "Close RailGo Assistant" : "Open RailGo Assistant"}
                 aria-expanded={isOpen}
-                onClick={() => {
-                    setIsOpen((current) => !current);
-                    setIsMinimized(false);
-                }}
+                onClick={handleLauncherClick}
             >
                 <span className="chatbot-launcher-icon-stack">
                     <MessageCircle size={27} className="chatbot-launcher-icon icon-chat" />

@@ -8,6 +8,23 @@ import { wait } from "../utils/loading";
 import "react-datepicker/dist/react-datepicker.css";
 import "../Styles/Hero.css";
 
+const JourneyDateButton = React.forwardRef(({ value, onClick, onBlur, onFocus, id }, ref) => (
+    <button
+        type="button"
+        id={id}
+        className="form-control custom-input inp-date date-picker-button"
+        onClick={onClick}
+        onBlur={onBlur}
+        onFocus={onFocus}
+        ref={ref}
+        aria-label="Select journey date"
+    >
+        <span className="date-picker-button-value">{value || "Select date"}</span>
+        <i className="fa-solid fa-calendar-days" aria-hidden="true"></i>
+    </button>
+));
+
+JourneyDateButton.displayName = "JourneyDateButton";
 
 function Hero() {
     const navigate = useNavigate();
@@ -737,6 +754,8 @@ function Hero() {
                 id="journey-date"
                 selected={date}
                 onChange={(d) => {
+                    if (!d) return;
+
                     setDate(d);
                     setErrors((current) => ({
                         ...current,
@@ -744,9 +763,11 @@ function Hero() {
                     }));
                 }}
                 minDate={new Date()}
-                dateFormat="dd MMM yyyy"
-                className="form-control custom-input inp-date"
+                dateFormat="dd-MM-yyyy"
+                customInput={<JourneyDateButton id="journey-date" />}
                 popperPlacement="bottom-start"
+                showPopperArrow={false}
+                shouldCloseOnSelect
             />
             <div
                 className="field-helper"
