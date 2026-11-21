@@ -22,20 +22,23 @@ function Navbar() {
             const token = localStorage.getItem("token");
             const storedUser = safeJsonParse(localStorage.getItem("user"));
 
-            setUser(token && storedUser ? storedUser : null);
-        };
+            if (!token || !storedUser) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                setUser(null);
+                return;
+            }
 
-        const handleUserUpdated = (event) => {
-            setUser(event.detail?.user || null);
+            setUser(storedUser);
         };
 
         syncUserFromStorage();
         window.addEventListener("storage", syncUserFromStorage);
-        window.addEventListener("railgo:user-updated", handleUserUpdated);
+        window.addEventListener("railgo:user-updated", syncUserFromStorage);
 
         return () => {
             window.removeEventListener("storage", syncUserFromStorage);
-            window.removeEventListener("railgo:user-updated", handleUserUpdated);
+            window.removeEventListener("railgo:user-updated", syncUserFromStorage);
         };
     }, []);
 
